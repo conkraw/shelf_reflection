@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import random
 
 st.set_page_config(layout="wide")
 
@@ -107,34 +108,48 @@ if st.session_state.role == "host":
 
     # ─── 4) Student Responses ──────────────────────────────────────────
     st.markdown("---")
-    st.subheader("📋 Student Responses")
-
-    # Fetch ALL responses for this question, ordered by timestamp
+    st.subheader("📋 Student Answers")
+    
+    # Fetch answers for the current question
     resp_docs = (
         db.collection("responses")
-          .where("question_id", "==", idx)
-          #.order_by("timestamp")
+          .where("question_id", "==", st.session_state.host_idx)
           .stream()
     )
-
-    rows = []
-    for d in resp_docs:
-        r = d.to_dict()
-        ts = r.get("timestamp")
-        # Convert Firestore timestamp to readable string
-        ts_str = (
-            ts.ToDatetime().strftime("%Y-%m-%d %H:%M:%S")
-            if hasattr(ts, "ToDatetime")
-            else str(ts)
-        )
-        #rows.append({"Nickname":  r["nickname"],"Answer":    r["answer"],"Timestamp": ts_str})
-        rows.append({"Answer": r["answer"]})
-        
-    if rows:
-        # st.dataframe will let you scroll if it gets long
-        st.dataframe(rows, height=300)
+    
+    answers = [doc.to_dict().get("answer", "") for doc in resp_docs]
+    
+    if answers:
+        # Optional: shuffle for fun randomness
+        random.shuffle(answers)
+    
+        # Define some background colors to rotate through
+        bg_colors = ["#E3F2FD", "#FCE4EC", "#E8F5E9", "#FFF3E0", "#F3E5F5"]
+    
+        for i, a in enumerate(answers):
+            color = bg_colors[i % len(bg_colors)]
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: {color};
+                    padding: 16px;
+                    margin: 10px 0;
+                    border-radius: 10px;
+                    text-align: center;
+                    font-size: 1.4rem;
+                    font-weight: bold;
+                    transition: all 0.3s ease;
+                "
+                onmouseover="this.style.transform='scale(1.03)'"
+                onmouseout="this.style.transform='scale(1)'"
+                >
+                    {a}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     else:
-        st.write("No responses submitted yet for this question.")
+        st.write("No responses submitted yet.")
 
 from streamlit_autorefresh import st_autorefresh
 
