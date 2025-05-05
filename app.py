@@ -56,11 +56,6 @@ def load_questions():
         # Stop the app here so you don’t run into downstream indexing errors
         st.stop()
 
-
-# ─── 2. App Configuration ─────────────────────────────────────────────────────
-
-mode = st.sidebar.selectbox("Mode", ["Host ▶️", "Player 🎮"])
-
 # ─── 3. Data Model Helpers ────────────────────────────────────────────────────
 def get_current_index():
     doc_ref = db.document("game_state/current")
@@ -74,10 +69,10 @@ def get_current_index():
 def set_current_index(idx):
     db.document("game_state/current").set({"current_index": idx})
 
-#####MAIN APP##### 
-if mode == "Host ▶️":
+# ─── 2. App Configuration ─────────────────────────────────────────────────────
+if st.session_state.role == "host":
+    # ─── Host View ─────────────────────────────────────────────────────────
     st.title("🔧 Quiz Host Controller")
-
     # Load questions & current index
     questions = load_questions()
     total_q  = len(questions)
@@ -131,12 +126,11 @@ if mode == "Host ▶️":
         st.table(rows)
     else:
         st.write("No responses submitted yet for this question.")
-
-
-# ─── 5. Player View ───────────────────────────────────────────────────────────
-else:
+    
+elif st.session_state.role == "player":
+    # ─── Player View ───────────────────────────────────────────────────────
     st.title("🕹️ Quiz Player")
-    nick = st.text_input("Enter your nickname", key="nick")
+        nick = st.text_input("Enter your nickname", key="nick")
     if not nick:
         st.info("Please choose a nickname to join the game.")
         st.stop()
@@ -170,4 +164,3 @@ else:
             "timestamp": firestore.SERVER_TIMESTAMP
         })
         st.success("✅ Answer submitted!")
-
