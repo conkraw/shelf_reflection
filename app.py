@@ -193,6 +193,7 @@ if st.session_state.role == "player":
 
     # 5) If already submitted, show this
     else:
-        st.success("✅ You’ve already submitted this question!")
+        st.balloons()
+        st.success("✅ Please look up at the screen")
 
 
