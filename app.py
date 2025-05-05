@@ -168,9 +168,9 @@ elif st.session_state.role == "player":
     # Submission button
     if st.button("Submit Answer", key=f"submit_{current_idx}"):
         db.collection("responses").add({
-            #"question_id": current_idx,
-            #"nickname": nick,
+            "question_id": current_idx,
+            "nickname": nick,
             "answer": choice,
-            #"timestamp": firestore.SERVER_TIMESTAMP
+            "timestamp": firestore.SERVER_TIMESTAMP
         })
         st.success("✅ Answer submitted!")
