@@ -6,10 +6,15 @@ if "role" not in st.session_state:
     st.title("🔐 Enter Quiz Code")
     code = st.text_input("Please enter the host password or game pin:", type="password")
     if st.button("Join"):
-        if code == st.secrets["host_password"]:
+        host_pwd = st.secrets["host_password"]
+        game_pin  = st.secrets["game_pin"]
+
+        if code == host_pwd:
             st.session_state.role = "host"
-        elif code == st.secrets["game_pin"]:
+            st.rerun()        # ← rerun immediately
+        elif code == game_pin:
             st.session_state.role = "player"
+            st.rerun()        # ← rerun immediately
         else:
             st.error("❌ Invalid code. Try again.")
     st.stop()
