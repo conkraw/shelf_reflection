@@ -127,12 +127,9 @@ if st.session_state.role == "host":
             if hasattr(ts, "ToDatetime")
             else str(ts)
         )
-        rows.append({
-            "Nickname":  r["nickname"],
-            "Answer":    r["answer"],
-            "Timestamp": ts_str
-        })
-
+        #rows.append({"Nickname":  r["nickname"],"Answer":    r["answer"],"Timestamp": ts_str})
+        rows.append({"Answer": r["answer"]})
+        
     if rows:
         # st.dataframe will let you scroll if it gets long
         st.dataframe(rows, height=300)
