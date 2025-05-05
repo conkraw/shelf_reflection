@@ -62,22 +62,19 @@ def get_current_index():
 def set_current_index(idx):
     db.document("game_state/current").set({"current_index": idx})
 
-# ─── 3) Main App ──────────────────────────────────────────────────────────────
+#####MAIN APP##### 
 if mode == "Host ▶️":
     st.title("🔧 Quiz Host Controller")
 
-    # this will either return a list or stop the app with an error
+    # Load questions & current index
     questions = load_questions()
     total_q  = len(questions)
-
-    # Safely grab or initialize the host’s question index
     if "host_idx" not in st.session_state:
-        # defaults to 0 if the doc doesn’t exist
         doc = db.document("game_state/current").get()
         st.session_state.host_idx = (doc.to_dict() or {}).get("current_index", 0)
-
-    # Show the current question
     idx = st.session_state.host_idx
+
+    # Display current question
     st.markdown(f"### Question {idx+1} / {total_q}")
     q = questions[idx]
     st.write(q["text"])
@@ -85,11 +82,44 @@ if mode == "Host ▶️":
         for opt in q["options"]:
             st.write(f"- {opt}")
 
+    # Advance button
     if st.button("➡️ Next Question"):
         new_idx = (idx + 1) % total_q
         st.session_state.host_idx = new_idx
         db.document("game_state/current").set({"current_index": new_idx})
         st.rerun()
+
+    # ─── Student Responses ────────────────────────────────────────────────────
+    st.markdown("---")
+    st.subheader("📋 Student Responses (Raw)")
+
+    # Pull all responses for this question
+    resp_docs = (
+        db.collection("responses")
+          .where("question_id", "==", idx)
+          .stream()
+    )
+    rows = []
+    for d in resp_docs:
+        r = d.to_dict()
+        ts = r.get("timestamp")
+        # If it's a Firestore timestamp, convert it; otherwise str()
+        ts_str = (
+            ts.ToDatetime().strftime("%Y-%m-%d %H:%M:%S")
+            if hasattr(ts, "ToDatetime")
+            else str(ts)
+        )
+        rows.append({
+            "Nickname":  r["nickname"],
+            "Answer":    r["answer"],
+            "Timestamp": ts_str
+        })
+
+    if rows:
+        st.table(rows)
+    else:
+        st.write("No responses submitted yet for this question.")
+
 
 # ─── 5. Player View ───────────────────────────────────────────────────────────
 else:
