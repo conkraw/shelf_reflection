@@ -148,16 +148,37 @@ elif st.session_state.role == "player":
     # ←––– This will rerun the script every 2 seconds
     st_autorefresh(interval=2000, key="player_refresh")
 
+     # 1) Always fetch the current host index from Firestore
+    fs_idx = get_current_index()
+
+    # 2) If we haven’t seen this question before, or host just moved on...
+    if ("active_idx" not in st.session_state) or (st.session_state.active_idx != fs_idx):
+        # → “lock in” the new question
+        st.session_state.active_idx = fs_idx
+        # Remove any old “submitted” flags for this new question
+        st.session_state.pop(f"submitted_{fs_idx}", None)
+
+    # 3) Use the frozen index for everything below
+    current_idx = st.session_state.active_idx
+
+    # Load that question once
+    q_doc = db.collection("questions").document(str(current_idx)).get()
+    if not q_doc.exists:
+        st.error(f"No question found for index {current_idx}")
+        st.stop()
+    q = q_doc.to_dict()
+
+    # 4) Render in a form so submit is atomic
     if not st.session_state.get(f"submitted_{current_idx}", False):
         with st.form(key=f"form_{current_idx}"):
+            st.markdown(f"### Q{current_idx+1}. {q['text']}")
             if q["type"] == "mc":
                 choice = st.radio("Choose one:", q["options"], key=f"mc_{current_idx}")
             else:
                 choice = st.text_input("Your answer:", key=f"text_{current_idx}")
             submitted = st.form_submit_button("Submit Answer")
-    
+
         if submitted:
-            # Write once, reliably
             db.collection("responses").add({
                 "question_id": current_idx,
                 "nickname": nick,
@@ -165,8 +186,7 @@ elif st.session_state.role == "player":
                 "timestamp": firestore.SERVER_TIMESTAMP
             })
             st.success("✅ Answer submitted!")
-            # Remember that they've submitted so we don’t show the form again
             st.session_state[f"submitted_{current_idx}"] = True
-    
+
     else:
         st.success("✅ You’ve already submitted this question!")
