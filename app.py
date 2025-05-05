@@ -95,7 +95,7 @@ if st.session_state.role == "host":
         st.caption("Ask students to visit this page and enter the code to join.")
 
         # Create QR code that links to the app
-        url = "https://your-streamlit-app-url.streamlit.app"  # 🔁 Replace with your real link
+        url = "https://peds-clerkship-shelf-reflection.streamlit.app/"  # 🔁 Replace with your real link
         qr = qrcode.make(url)
         buf = BytesIO()
         qr.save(buf)
