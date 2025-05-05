@@ -12,3 +12,4 @@ python-docx
 beautifulsoup4
 firebase-admin
 streamlit-autorefresh
+qrcode
