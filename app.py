@@ -3,6 +3,8 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+st.set_page_config(layout="wide")
+
 # ─── 1. Initialize Firestore ──────────────────────────────────────────────────
 firebase_creds = st.secrets["firebase_service_account"].to_dict()
 if not firebase_admin._apps:
@@ -38,7 +40,7 @@ def load_questions():
 
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
-st.set_page_config(layout="wide")
+
 mode = st.sidebar.selectbox("Mode", ["Host ▶️", "Player 🎮"])
 
 
