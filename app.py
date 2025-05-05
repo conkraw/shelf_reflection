@@ -1,5 +1,4 @@
 import streamlit as st
-import json
 import time
 import threading
 
@@ -7,12 +6,11 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 # ─── 1. Initialize Firestore ──────────────────────────────────────────────────
+firebase_creds = st.secrets["firebase_service_account"].to_dict()
 if not firebase_admin._apps:
-    sa_json = json.loads(st.secrets["firebase"]["service_account"])
-    cred    = credentials.Certificate(sa_json)
+    cred = credentials.Certificate(firebase_creds)
     firebase_admin.initialize_app(cred)
 db = firestore.client()
-
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 st.set_page_config(layout="wide")
@@ -36,11 +34,9 @@ def set_current_index(idx):
 if mode == "Host ▶️":
     st.title("🔧 Quiz Host Controller")
 
-    # Load questions once
     questions = load_questions()
     total_q = len(questions)
 
-    # Persist host’s local index
     if "host_idx" not in st.session_state:
         st.session_state.host_idx = get_current_index()
 
@@ -48,8 +44,8 @@ if mode == "Host ▶️":
     q = questions[st.session_state.host_idx]
     st.write(q["text"])
     if q["type"] == "mc":
-        for o in q["options"]:
-            st.write(f"- {o}")
+        for opt in q["options"]:
+            st.write(f"- {opt}")
 
     if st.button("➡️ Next Question"):
         new_idx = (st.session_state.host_idx + 1) % total_q
@@ -59,19 +55,23 @@ if mode == "Host ▶️":
 
     st.markdown("---")
     st.subheader("🏆 Leaderboard (Current Q)")
-    # Simple leaderboard: count correct MC answers for current question
-    resp_docs = db.collection("responses").where("question_id", "==", st.session_state.host_idx).stream()
+    resp_docs = (
+        db.collection("responses")
+          .where("question_id", "==", st.session_state.host_idx)
+          .stream()
+    )
     scores = {}
     for d in resp_docs:
         r = d.to_dict()
         nick = r["nickname"]
         ans  = r["answer"]
-        correct = (ans == q.get("ans")) if q["type"]=="mc" else False
+        correct = (ans == q.get("ans")) if q["type"] == "mc" else False
         scores[nick] = scores.get(nick, 0) + (1 if correct else 0)
+
     if scores:
         st.table(
             sorted(scores.items(), key=lambda x: -x[1]),
-            columns=["Nickname","Points"]
+            columns=["Nickname", "Points"]
         )
     else:
         st.write("No responses yet.")
@@ -87,7 +87,6 @@ else:
 
     placeholder = st.empty()
 
-    # Callback for Firestore real‐time updates
     def on_state_change(doc_snapshot, changes, read_time):
         for doc in doc_snapshot:
             idx = doc.to_dict()["current_index"]
@@ -109,9 +108,10 @@ else:
                         "timestamp": firestore.SERVER_TIMESTAMP
                     })
                     st.success("Answer submitted!")
-    # Attach listener once
+
     if "listener" not in st.session_state:
         state_ref = db.document("game_state/current")
         st.session_state.listener = state_ref.on_snapshot(on_state_change)
 
     st.write("⏳ Waiting for host to advance questions…")
+
