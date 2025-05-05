@@ -1,12 +1,24 @@
 import streamlit as st
-import json
-import firebase_admin
+st.set_page_config(layout="wide")
+
+# 1) Ask for the code once
+if "role" not in st.session_state:
+    st.title("🔐 Enter Quiz Code")
+    code = st.text_input("Please enter the host password or game pin:", type="password")
+    if st.button("Join"):
+        if code == st.secrets["host_password"]:
+            st.session_state.role = "host"
+        elif code == st.secrets["game_pin"]:
+            st.session_state.role = "player"
+        else:
+            st.error("❌ Invalid code. Try again.")
+    st.stop()
+
+# 2) Now that we have a role, we can import and initialize Firestore
+import json, firebase_admin
 from firebase_admin import credentials, firestore
 from streamlit_autorefresh import st_autorefresh
 
-st.set_page_config(layout="wide")
-
-# ─── 1. Initialize Firestore ──────────────────────────────────────────────────
 firebase_creds = st.secrets["firebase_service_account"].to_dict()
 if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_creds)
