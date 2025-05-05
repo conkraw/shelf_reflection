@@ -1,6 +1,9 @@
 import streamlit as st
 import time
 import random
+import qrcode
+from io import BytesIO
+import base64
 
 st.set_page_config(layout="wide")
 
@@ -81,17 +84,42 @@ def set_current_index(idx):
 if st.session_state.role == "host":
     st.title("🔧 Quiz Host Controller")
 
-    # ─── 0) Auto-refresh every 2 seconds ──────────────────────────────
+    # ─── Initialize quiz_started flag ─────────────────────────────
+    if "quiz_started" not in st.session_state:
+        st.session_state.quiz_started = False
+
+    # ─── Waiting Room Screen ──────────────────────────────────────
+    if not st.session_state.quiz_started:
+        st.header("🕒 Waiting for students to join...")
+        st.subheader("🔢 Entry Code: `1234`")
+        st.caption("Ask students to visit this page and enter the code to join.")
+
+        # Create QR code that links to the app
+        url = "https://your-streamlit-app-url.streamlit.app"  # 🔁 Replace with your real link
+        qr = qrcode.make(url)
+        buf = BytesIO()
+        qr.save(buf)
+        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        st.image(f"data:image/png;base64,{b64}", width=200)
+
+        # Start button
+        if st.button("🚀 Start Quiz"):
+            st.session_state.quiz_started = True
+            st.rerun()
+
+        st.stop()  # Wait here until quiz starts
+
+    # ─── Auto-refresh during quiz ─────────────────────────────────
     st_autorefresh(interval=2000, key="host_refresh")
 
-    # ─── 1) Load questions & current index ────────────────────────────
+    # ─── Load questions & index ───────────────────────────────────
     questions = load_questions()
-    total_q  = len(questions)
+    total_q = len(questions)
     if "host_idx" not in st.session_state:
         st.session_state.host_idx = get_current_index()
     idx = st.session_state.host_idx
 
-    # ─── 2) Show the current question ─────────────────────────────────
+    # ─── Show current question ────────────────────────────────────
     st.markdown(f"### Question {idx+1} / {total_q}")
     q = questions[idx]
     st.write(q["text"])
@@ -99,33 +127,27 @@ if st.session_state.role == "host":
         for opt in q["options"]:
             st.write(f"- {opt}")
 
-    # ─── 3) Advance button ────────────────────────────────────────────
+    # ─── Advance button ───────────────────────────────────────────
     if st.button("➡️ Next Question"):
         new_idx = (idx + 1) % total_q
         st.session_state.host_idx = new_idx
         set_current_index(new_idx)
         st.rerun()
 
-    # ─── 4) Student Responses ──────────────────────────────────────────
+    # ─── Student Responses ────────────────────────────────────────
     st.markdown("---")
     st.subheader("📋 Student Answers")
-    
-    # Fetch answers for the current question
+
     resp_docs = (
         db.collection("responses")
-          .where("question_id", "==", st.session_state.host_idx)
+          .where("question_id", "==", idx)
           .stream()
     )
-    
     answers = [doc.to_dict().get("answer", "") for doc in resp_docs]
-    
+
     if answers:
-        # Optional: shuffle for fun randomness
         random.shuffle(answers)
-    
-        # Define some background colors to rotate through
         bg_colors = ["#E3F2FD", "#FCE4EC", "#E8F5E9", "#FFF3E0", "#F3E5F5"]
-    
         for i, a in enumerate(answers):
             color = bg_colors[i % len(bg_colors)]
             st.markdown(
