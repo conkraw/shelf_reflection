@@ -18,13 +18,14 @@ mode = st.sidebar.selectbox("Mode", ["Host ▶️", "Player 🎮"])
 
 
 # ─── 3. Data Model Helpers ────────────────────────────────────────────────────
-def load_questions():
-    docs = db.collection("questions").order_by("__name__").stream()
-    return [q.to_dict() for q in docs]
-
 def get_current_index():
-    doc = db.document("game_state/current").get()
-    return doc.to_dict().get("current_index", 0)
+    doc_ref = db.document("game_state/current")
+    doc = doc_ref.get()
+    if not doc.exists:
+        # no game_state yet → start at 0
+        return 0
+    data = doc.to_dict() or {}
+    return data.get("current_index", 0)
 
 def set_current_index(idx):
     db.document("game_state/current").set({"current_index": idx})
@@ -37,6 +38,7 @@ if mode == "Host ▶️":
     questions = load_questions()
     total_q = len(questions)
 
+    # Safely initialize host_idx from Firestore (or 0 if missing)
     if "host_idx" not in st.session_state:
         st.session_state.host_idx = get_current_index()
 
