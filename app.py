@@ -111,7 +111,7 @@ if st.session_state.role == "host":
     resp_docs = (
         db.collection("responses")
           .where("question_id", "==", idx)
-          .order_by("timestamp")
+          #.order_by("timestamp")
           .stream()
     )
 
