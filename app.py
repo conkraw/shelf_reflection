@@ -136,40 +136,43 @@ if st.session_state.role == "host":
         st.dataframe(rows, height=300)
     else:
         st.write("No responses submitted yet for this question.")
-    
-elif st.session_state.role == "player":
-    # ─── Player View ───────────────────────────────────────────────────────
+
+from streamlit_autorefresh import st_autorefresh
+
+# ─── Player View ───────────────────────────────────────────────────────────
+if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
     nick = st.text_input("Enter your nickname", key="nick")
     if not nick:
         st.info("Please choose a nickname to join the game.")
         st.stop()
 
-    # ←––– This will rerun the script every 2 seconds
+    # ←–– Auto-refresh every 2s
     st_autorefresh(interval=2000, key="player_refresh")
 
-     # 1) Always fetch the current host index from Firestore
+    # 1) Fetch host’s index and “lock it in” as active_idx
     fs_idx = get_current_index()
-
-    # 2) If we haven’t seen this question before, or host just moved on...
     if ("active_idx" not in st.session_state) or (st.session_state.active_idx != fs_idx):
-        # → “lock in” the new question
         st.session_state.active_idx = fs_idx
-        # Remove any old “submitted” flags for this new question
+        # clear any old flags
         st.session_state.pop(f"submitted_{fs_idx}", None)
+        st.session_state.pop(f"just_submitted_{fs_idx}", None)
 
-    # 3) Use the frozen index for everything below
     current_idx = st.session_state.active_idx
 
-    # Load that question once
+    # 2) Load the question
     q_doc = db.collection("questions").document(str(current_idx)).get()
     if not q_doc.exists:
         st.error(f"No question found for index {current_idx}")
         st.stop()
     q = q_doc.to_dict()
 
-    # 4) Render in a form so submit is atomic
-    if not st.session_state.get(f"submitted_{current_idx}", False):
+    # 3) Check our two flags
+    submitted_flag      = st.session_state.get(f"submitted_{current_idx}", False)
+    just_submitted_flag = st.session_state.get(f"just_submitted_{current_idx}", False)
+
+    # 4) Show the form only if they haven’t submitted yet
+    if not submitted_flag:
         with st.form(key=f"form_{current_idx}"):
             st.markdown(f"### Q{current_idx+1}. {q['text']}")
             if q["type"] == "mc":
@@ -178,6 +181,7 @@ elif st.session_state.role == "player":
                 choice = st.text_input("Your answer:", key=f"text_{current_idx}")
             submitted = st.form_submit_button("Submit Answer")
 
+        # 5) On the single submit click, write once and set both flags
         if submitted:
             db.collection("responses").add({
                 "question_id": current_idx,
@@ -185,8 +189,15 @@ elif st.session_state.role == "player":
                 "answer": choice,
                 "timestamp": firestore.SERVER_TIMESTAMP
             })
-            st.success("✅ Answer submitted!")
-            st.session_state[f"submitted_{current_idx}"] = True
+            st.session_state[f"submitted_{current_idx}"]      = True
+            st.session_state[f"just_submitted_{current_idx}"] = True
 
-    else:
+    # 6) Show exactly one message per run:
+    if just_submitted_flag:
+        st.success("✅ Answer submitted!")
+        # clear so next run falls into the ‘already submitted’ bucket
+        st.session_state[f"just_submitted_{current_idx}"] = False
+
+    elif submitted_flag:
         st.success("✅ You’ve already submitted this question!")
+
