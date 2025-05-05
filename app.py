@@ -41,7 +41,7 @@ def load_questions():
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 
-mode = st.sidebar.selectbox("Mode", ["Host ▶️", "Player 🎮"], key="app_mode" )
+mode = st.sidebar.selectbox("Mode", ["Host ▶️", "Player 🎮"])
 
 # ─── 3. Data Model Helpers ────────────────────────────────────────────────────
 def get_current_index():
@@ -56,10 +56,7 @@ def get_current_index():
 def set_current_index(idx):
     db.document("game_state/current").set({"current_index": idx})
 
-
 # ─── 3) Main App ──────────────────────────────────────────────────────────────
-mode = st.sidebar.selectbox("Mode", ["Host ▶️", "Player 🎮"])
-
 if mode == "Host ▶️":
     st.title("🔧 Quiz Host Controller")
 
