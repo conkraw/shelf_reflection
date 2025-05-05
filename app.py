@@ -79,6 +79,10 @@ if st.session_state.role == "host":
     # ─── Host View ─────────────────────────────────────────────────────────
     st.title("🔧 Quiz Host Controller")
     # Load questions & current index
+    
+    # ←–– Re-run this script every 2 seconds to pull in new responses
+    st_autorefresh(interval=2000, key="host_refresh")
+    
     questions = load_questions()
     total_q  = len(questions)
     if "host_idx" not in st.session_state:
@@ -114,18 +118,7 @@ if st.session_state.role == "host":
     rows = []
     for d in resp_docs:
         r = d.to_dict()
-        ts = r.get("timestamp")
-        # If it's a Firestore timestamp, convert it; otherwise str()
-        ts_str = (
-            ts.ToDatetime().strftime("%Y-%m-%d %H:%M:%S")
-            if hasattr(ts, "ToDatetime")
-            else str(ts)
-        )
-        rows.append({
-            #"Nickname":  r["nickname"],
-            "Answer":    r["answer"],
-            #"Timestamp": ts_str
-        })
+        rows.append({"Answer": r["answer"]})
 
     if rows:
         st.table(rows)
