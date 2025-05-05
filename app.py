@@ -83,7 +83,7 @@ if mode == "Host ▶️":
         new_idx = (idx + 1) % total_q
         st.session_state.host_idx = new_idx
         db.document("game_state/current").set({"current_index": new_idx})
-        st.experimental_rerun()
+        st.rerun()
 
 # ─── 5. Player View ───────────────────────────────────────────────────────────
 else:
