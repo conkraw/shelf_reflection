@@ -99,33 +99,33 @@ else:
         st.info("Please choose a nickname to join the game.")
         st.stop()
 
-    placeholder = st.empty()
+    # ←––– This will rerun the script every 2 seconds
+    st_autorefresh(interval=2000, key="player_refresh")
 
-    def on_state_change(doc_snapshot, changes, read_time):
-        for doc in doc_snapshot:
-            idx = doc.to_dict()["current_index"]
-            q_doc = db.collection("questions").document(str(idx)).get()
-            q = q_doc.to_dict()
+    # On each run, fetch the latest question index
+    current_idx = get_current_index()
 
-            with placeholder.container():
-                st.markdown(f"### Q{idx+1}. {q['text']}")
-                if q["type"] == "mc":
-                    choice = st.radio("Choose one:", q["options"], key=f"mc_{idx}")
-                else:
-                    choice = st.text_input("Your answer:", key=f"text_{idx}")
+    # Load that question
+    q_doc = db.collection("questions").document(str(current_idx)).get()
+    if not q_doc.exists:
+        st.error("No question found for index " + str(current_idx))
+        st.stop()
+    q = q_doc.to_dict()
 
-                if st.button("Submit Answer", key=f"submit_{idx}"):
-                    db.collection("responses").add({
-                        "question_id": idx,
-                        "nickname": nick,
-                        "answer": choice,
-                        "timestamp": firestore.SERVER_TIMESTAMP
-                    })
-                    st.success("Answer submitted!")
+    # Render it
+    st.markdown(f"### Q{current_idx+1}. {q['text']}")
+    if q["type"] == "mc":
+        choice = st.radio("Choose one:", q["options"], key=f"mc_{current_idx}")
+    else:
+        choice = st.text_input("Your answer:", key=f"text_{current_idx}")
 
-    if "listener" not in st.session_state:
-        state_ref = db.document("game_state/current")
-        st.session_state.listener = state_ref.on_snapshot(on_state_change)
-
-    st.write("⏳ Waiting for host to advance questions…")
+    # Submission button
+    if st.button("Submit Answer", key=f"submit_{current_idx}"):
+        db.collection("responses").add({
+            "question_id": current_idx,
+            "nickname": nick,
+            "answer": choice,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+        st.success("✅ Answer submitted!")
 
