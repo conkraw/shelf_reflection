@@ -110,9 +110,9 @@ if mode == "Host ▶️":
             else str(ts)
         )
         rows.append({
-            "Nickname":  r["nickname"],
+            #"Nickname":  r["nickname"],
             "Answer":    r["answer"],
-            "Timestamp": ts_str
+            #"Timestamp": ts_str
         })
 
     if rows:
