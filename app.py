@@ -195,9 +195,6 @@ if st.session_state.role == "player":
 
     # 5) If already submitted, show this
     else:
-        st.balloons()
-        time.sleep(3)        # Pause for 3 seconds
-        msg.empty()   
         st.success("✅ Please look up at the screen")
 
 
