@@ -154,9 +154,8 @@ if st.session_state.role == "player":
     fs_idx = get_current_index()
     if ("active_idx" not in st.session_state) or (st.session_state.active_idx != fs_idx):
         st.session_state.active_idx = fs_idx
-        # clear any old flags
+        # clear any old submitted flag for this question
         st.session_state.pop(f"submitted_{fs_idx}", None)
-        st.session_state.pop(f"just_submitted_{fs_idx}", None)
 
     current_idx = st.session_state.active_idx
 
@@ -167,37 +166,33 @@ if st.session_state.role == "player":
         st.stop()
     q = q_doc.to_dict()
 
-    # 3) Check our two flags
-    submitted_flag      = st.session_state.get(f"submitted_{current_idx}", False)
-    just_submitted_flag = st.session_state.get(f"just_submitted_{current_idx}", False)
+    # 3) Single submitted flag
+    submitted_key = f"submitted_{current_idx}"
 
-    # 4) Show the form only if they haven’t submitted yet
-    if not submitted_flag:
+    # 4) Show the form if not yet submitted
+    if not st.session_state.get(submitted_key, False):
         with st.form(key=f"form_{current_idx}"):
             st.markdown(f"### Q{current_idx+1}. {q['text']}")
             if q["type"] == "mc":
                 choice = st.radio("Choose one:", q["options"], key=f"mc_{current_idx}")
             else:
                 choice = st.text_input("Your answer:", key=f"text_{current_idx}")
-            submitted = st.form_submit_button("Submit Answer")
+            clicked = st.form_submit_button("Submit Answer")
 
-        # 5) On the single submit click, write once and set both flags
-        if submitted:
+        if clicked:
+            # write once
             db.collection("responses").add({
                 "question_id": current_idx,
-                "nickname": nick,
-                "answer": choice,
-                "timestamp": firestore.SERVER_TIMESTAMP
+                "nickname":    nick,
+                "answer":      choice,
+                "timestamp":   firestore.SERVER_TIMESTAMP
             })
-            st.session_state[f"submitted_{current_idx}"]      = True
-            st.session_state[f"just_submitted_{current_idx}"] = True
+            # mark as submitted and show confirmation
+            st.session_state[submitted_key] = True
+            st.success("✅ Answer submitted!")
 
-    # 6) Show exactly one message per run:
-    if just_submitted_flag:
-        st.success("✅ Answer submitted!")
-        # clear so next run falls into the ‘already submitted’ bucket
-        st.session_state[f"just_submitted_{current_idx}"] = False
-
-    elif submitted_flag:
+    # 5) If already submitted, show this
+    else:
         st.success("✅ You’ve already submitted this question!")
+
 
