@@ -1,7 +1,5 @@
 import streamlit as st
-import time
-import threading
-
+import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -11,6 +9,33 @@ if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_creds)
     firebase_admin.initialize_app(cred)
 db = firestore.client()
+
+# ─── 2) Helpers ───────────────────────────────────────────────────────────────
+def load_questions():
+    """
+    Attempts to load all docs from the `questions` collection,
+    ordered by name (i.e. "0", "1", "2", ...).
+    Returns a list of dicts, or raises a clear exception.
+    """
+    try:
+        docs = db.collection("questions").order_by("__name__").stream()
+        questions = []
+        for doc in docs:
+            data = doc.to_dict()
+            if data is None:
+                st.warning(f"Document {doc.id} has no data.")
+                continue
+            questions.append(data)
+        if not questions:
+            st.warning("⚠️ No questions found in Firestore – check your collection name and rules.")
+        return questions
+
+    except Exception as e:
+        # Show the error in the app so you can see exactly what's wrong
+        st.error(f"❌ Failed to load questions from Firestore:\n{e}")
+        # Stop the app here so you don’t run into downstream indexing errors
+        st.stop()
+
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 st.set_page_config(layout="wide")
@@ -31,53 +56,37 @@ def set_current_index(idx):
     db.document("game_state/current").set({"current_index": idx})
 
 
-# ─── 4. Host View ─────────────────────────────────────────────────────────────
+# ─── 3) Main App ──────────────────────────────────────────────────────────────
+st.set_page_config(layout="wide")
+mode = st.sidebar.selectbox("Mode", ["Host ▶️", "Player 🎮"])
+
 if mode == "Host ▶️":
     st.title("🔧 Quiz Host Controller")
 
+    # this will either return a list or stop the app with an error
     questions = load_questions()
-    total_q = len(questions)
+    total_q  = len(questions)
 
-    # Safely initialize host_idx from Firestore (or 0 if missing)
+    # Safely grab or initialize the host’s question index
     if "host_idx" not in st.session_state:
-        st.session_state.host_idx = get_current_index()
+        # defaults to 0 if the doc doesn’t exist
+        doc = db.document("game_state/current").get()
+        st.session_state.host_idx = (doc.to_dict() or {}).get("current_index", 0)
 
-    st.markdown(f"### Question {st.session_state.host_idx+1} / {total_q}")
-    q = questions[st.session_state.host_idx]
+    # Show the current question
+    idx = st.session_state.host_idx
+    st.markdown(f"### Question {idx+1} / {total_q}")
+    q = questions[idx]
     st.write(q["text"])
     if q["type"] == "mc":
         for opt in q["options"]:
             st.write(f"- {opt}")
 
     if st.button("➡️ Next Question"):
-        new_idx = (st.session_state.host_idx + 1) % total_q
+        new_idx = (idx + 1) % total_q
         st.session_state.host_idx = new_idx
-        set_current_index(new_idx)
+        db.document("game_state/current").set({"current_index": new_idx})
         st.experimental_rerun()
-
-    st.markdown("---")
-    st.subheader("🏆 Leaderboard (Current Q)")
-    resp_docs = (
-        db.collection("responses")
-          .where("question_id", "==", st.session_state.host_idx)
-          .stream()
-    )
-    scores = {}
-    for d in resp_docs:
-        r = d.to_dict()
-        nick = r["nickname"]
-        ans  = r["answer"]
-        correct = (ans == q.get("ans")) if q["type"] == "mc" else False
-        scores[nick] = scores.get(nick, 0) + (1 if correct else 0)
-
-    if scores:
-        st.table(
-            sorted(scores.items(), key=lambda x: -x[1]),
-            columns=["Nickname", "Points"]
-        )
-    else:
-        st.write("No responses yet.")
-
 
 # ─── 5. Player View ───────────────────────────────────────────────────────────
 else:
