@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(layout="wide")
 
