@@ -148,29 +148,25 @@ elif st.session_state.role == "player":
     # ←––– This will rerun the script every 2 seconds
     st_autorefresh(interval=2000, key="player_refresh")
 
-    # On each run, fetch the latest question index
-    current_idx = get_current_index()
-
-    # Load that question
-    q_doc = db.collection("questions").document(str(current_idx)).get()
-    if not q_doc.exists:
-        st.error("No question found for index " + str(current_idx))
-        st.stop()
-    q = q_doc.to_dict()
-
-    # Render it
-    st.markdown(f"### Q{current_idx+1}. {q['text']}")
-    if q["type"] == "mc":
-        choice = st.radio("Choose one:", q["options"], key=f"mc_{current_idx}")
+    if not st.session_state.get(f"submitted_{current_idx}", False):
+        with st.form(key=f"form_{current_idx}"):
+            if q["type"] == "mc":
+                choice = st.radio("Choose one:", q["options"], key=f"mc_{current_idx}")
+            else:
+                choice = st.text_input("Your answer:", key=f"text_{current_idx}")
+            submitted = st.form_submit_button("Submit Answer")
+    
+        if submitted:
+            # Write once, reliably
+            db.collection("responses").add({
+                "question_id": current_idx,
+                "nickname": nick,
+                "answer": choice,
+                "timestamp": firestore.SERVER_TIMESTAMP
+            })
+            st.success("✅ Answer submitted!")
+            # Remember that they've submitted so we don’t show the form again
+            st.session_state[f"submitted_{current_idx}"] = True
+    
     else:
-        choice = st.text_input("Your answer:", key=f"text_{current_idx}")
-
-    # Submission button
-    if st.button("Submit Answer", key=f"submit_{current_idx}"):
-        db.collection("responses").add({
-            "question_id": current_idx,
-            "nickname": nick,
-            "answer": choice,
-            "timestamp": firestore.SERVER_TIMESTAMP
-        })
-        st.success("✅ Answer submitted!")
+        st.success("✅ You’ve already submitted this question!")
