@@ -107,7 +107,7 @@ if st.session_state.role == "host":
 
     # ─── 4) Student Responses ──────────────────────────────────────────
     st.markdown("---")
-    st.subheader("📋 Student Responses (Raw)")
+    st.subheader("📋 Student Responses")
 
     # Fetch ALL responses for this question, ordered by timestamp
     resp_docs = (
