@@ -130,7 +130,7 @@ if st.session_state.role == "host":
 elif st.session_state.role == "player":
     # ─── Player View ───────────────────────────────────────────────────────
     st.title("🕹️ Quiz Player")
-        nick = st.text_input("Enter your nickname", key="nick")
+    nick = st.text_input("Enter your nickname", key="nick")
     if not nick:
         st.info("Please choose a nickname to join the game.")
         st.stop()
