@@ -12,6 +12,11 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+cur_ref = db.document("game_state/current")
+if not cur_ref.get().exists:
+    # Initialize to question 0 so players immediately see Q1
+    cur_ref.set({"current_index": 0})
+
 # ─── 2) Helpers ───────────────────────────────────────────────────────────────
 def load_questions():
     """
