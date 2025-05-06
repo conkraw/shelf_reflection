@@ -123,6 +123,27 @@ if st.session_state.role == "host":
           </a>
         </div>
         """, unsafe_allow_html=True)
+
+        # Auto-refresh so the list updates without manual reload
+        st_autorefresh(interval=2000, key="host_wait_refresh")
+    
+        st.markdown("### 👥 Participants Joined")
+    
+        # Fetch & order by join time
+        docs = db.collection("participants") \
+                 .order_by("timestamp") \
+                 .stream()
+    
+        rows = []
+        for i, d in enumerate(docs, start=1):
+            p = d.to_dict()
+            rows.append({"#": i, "Nickname": p["nickname"]})
+    
+        if rows:
+            st.table(rows)
+            st.write(f"**Total:** {len(rows)}")
+        else:
+            st.write("_No one has joined yet._")
     
         st.stop()
         
@@ -199,7 +220,14 @@ if st.session_state.role == "player":
     if not nick:
         st.info("Please choose a nickname to join the game.")
         st.stop()
-
+    if not st.session_state.get("joined", False):
+        # write a participant record once per session
+        db.collection("participants").add({
+            "nickname":  nick,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+        st.session_state.joined = True
+    
     # ←–– Auto-refresh every 2s
     st_autorefresh(interval=2000, key="player_refresh")
 
