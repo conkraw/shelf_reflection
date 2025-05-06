@@ -25,7 +25,7 @@ def display_repo_image(image_field):
     for ext in [".png", ".jpg", ".jpeg", ".gif"]:
         try_url = base + name + ext
         try:
-            st.image(try_url, use_column_width=True)
+            st.image(try_url, use_container_width=True)
             return  # stop at first successful load
         except:
             continue
