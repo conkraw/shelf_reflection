@@ -110,7 +110,7 @@ if st.session_state.role == "host":
         )
     
         # Centered button using Streamlit layout
-        col1, col2, col3 = st.columns([1, 2, 1])
+        col1, col2, col3 = st.columns([3, 1, 3])
         with col2:
             if st.button("🚀 Start Quiz"):
                 st.session_state.quiz_started = True
