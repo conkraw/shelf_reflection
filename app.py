@@ -138,13 +138,40 @@ if st.session_state.role == "host":
         for i, d in enumerate(docs, start=1):
             p = d.to_dict()
             rows.append({"#": i, "Nickname": p["nickname"]})
-    
+        
         if rows:
-            st.table(rows)
-            st.write(f"**Total:** {len(rows)}")
+            # Build an HTML badge for each participant
+            badges = "".join([
+                f"<span style='\
+                    display:inline-block;\
+                    background:#E3F2FD;\
+                    color:#333;\
+                    padding:8px 16px;\
+                    margin:4px;\
+                    border-radius:12px;\
+                    font-size:1rem;\
+                    font-weight:500;\
+                    box-shadow:0 2px 4px rgba(0,0,0,0.1);\
+                '>{r['#']}. {r['Nickname']}</span>"
+                for r in rows
+            ])
+        
+            # Wrap in a centered container
+            st.markdown(
+                f"""
+                <div style="text-align:center; margin-top:1rem; margin-bottom:1rem;">
+                  <h3 style="margin-bottom:0.5rem;">👥 Participants Joined ({len(rows)})</h3>
+                  {badges}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         else:
-            st.write("_No one has joined yet._")
-    
+            st.markdown(
+                "<p style='text-align:center; font-style:italic; color:#666;'>No one has joined yet.</p>",
+                unsafe_allow_html=True
+            )
+            
         st.stop()
         
     # ─── Auto-refresh during quiz ─────────────────────────────────
