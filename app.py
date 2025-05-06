@@ -93,33 +93,45 @@ if st.session_state.role == "host":
         st.session_state.quiz_started = False
 
     # ─── Waiting Room Screen ──────────────────────────────────────
-    if not st.session_state.quiz_started:
+    if not st.session_state.get("quiz_started", False):
+        # build the QR PNG as before…
         url = "https://peds-clerkship-shelf-reflection.streamlit.app/"
         qr = qrcode.make(url)
         buf = BytesIO(); qr.save(buf)
         b64 = base64.b64encode(buf.getvalue()).decode()
     
-        st.markdown(f"""
-        <div style="text-align:center;">
-          <h1>🕒 Waiting for students to join...</h1>
-          <h2>🔢 Entry Code: <code>1234</code></h2>
-          <p></p>
-          <img src="data:image/png;base64,{b64}" width="200" />
-          <br><br>
-          <a href="?start_quiz=1"
-             style="
-               display:inline-block;
-               background-color:#f63366;
-               color:#fff;
-               padding:0.75em 1.5em;
-               font-size:1.2rem;
-               border-radius:8px;
-               text-decoration:none;
-             ">
-            🚀 Start Quiz
-          </a>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <style>
+              /* center the entire waiting container */
+              .waiting-room {{ text-align: center; padding: 2rem; }}
+              /* style & center the “Start Quiz” link as a button */
+              .waiting-room .start-btn {{
+                display: inline-block;
+                margin-top: 1.5rem;
+                background-color: #f63366;
+                color: white;
+                padding: 0.75em 1.5em;
+                font-size: 1.2rem;
+                border-radius: 8px;
+                text-decoration: none;
+              }}
+              .waiting-room .start-btn:hover {{
+                background-color: #e52a58;
+              }}
+            </style>
+    
+            <div class="waiting-room">
+              <h1>🕒 Waiting for students to join...</h1>
+              <h2>🔢 Entry Code: <code style="font-size:1.2rem;">1234</code></h2>
+              <p>Ask students to visit this page and enter the code to join.</p>
+              <img src="data:image/png;base64,{b64}" width="200" />
+              <br>
+              <a href="?start_quiz=1" class="start-btn">🚀 Start Quiz</a>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         # Auto-refresh so the list updates without manual reload
         st_autorefresh(interval=2000, key="host_wait_refresh")
