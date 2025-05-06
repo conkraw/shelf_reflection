@@ -145,8 +145,6 @@ if st.session_state.role == "host":
         # Auto-refresh so the list updates without manual reload
         st_autorefresh(interval=2000, key="host_wait_refresh")
     
-        st.markdown("### 👥 Participants Joined")
-    
         # Fetch & order by join time
         docs = db.collection("participants") \
                  .order_by("timestamp") \
