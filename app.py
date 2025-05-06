@@ -36,6 +36,13 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+params = st.experimental_get_query_params()
+if params.get("start_quiz") == ["1"]:
+    st.session_state.quiz_started = True
+    # Clear the param so refreshes don’t re-start
+    st.set_query_params()
+    st.rerun()
+
 cur_ref = db.document("game_state/current")
 if not cur_ref.get().exists:
     # Initialize to question 0 so players immediately see Q1
@@ -90,51 +97,35 @@ if st.session_state.role == "host":
 
     # ─── Waiting Room Screen ──────────────────────────────────────
     if not st.session_state.quiz_started:
-        url = "https://peds-clerkship-shelf-reflection.streamlit.app/"  # your real link
+        url = "https://peds-clerkship-shelf-reflection.streamlit.app/"
         qr = qrcode.make(url)
-        buf = BytesIO()
-        qr.save(buf)
-        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        buf = BytesIO(); qr.save(buf)
+        b64 = base64.b64encode(buf.getvalue()).decode()
     
-        # HTML wrapper to center everything
-        st.markdown(
-            f"""
-            <div style='text-align: center;'>
-                <h1 style='font-size: 2rem;'>🕒 Waiting for students to join...</h1>
-                <h2>🔢 Entry Code: <code style='font-size: 1.5rem;'>1234</code></h2>
-                <p style='font-size: 1rem;'>Ask students to visit this page and enter the code to join.</p>
-                <img src="data:image/png;base64,{b64}" width="200" />
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    
-        # Centered button using Streamlit layout
-        col1, col2, col3 = st.columns(3)
-        with col2:
-            st.markdown(
-                """
-                <style>
-                .centered-button > button {
-                    width: 100%;
-                    background-color: #f63366;
-                    color: white;
-                    font-size: 1.1rem;
-                    border: none;
-                    padding: 0.6em;
-                    border-radius: 8px;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-            start = st.button("🚀 Start Quiz", key="centered_btn")
-            if start:
-                st.session_state.quiz_started = True
-                st.rerun()
+        st.markdown(f"""
+        <div style="text-align:center;">
+          <h1>🕒 Waiting for students to join...</h1>
+          <h2>🔢 Entry Code: <code>1234</code></h2>
+          <p>Ask students to visit this page and enter the code to join.</p>
+          <img src="data:image/png;base64,{b64}" width="200" />
+          <br><br>
+          <a href="?start_quiz=1"
+             style="
+               display:inline-block;
+               background-color:#f63366;
+               color:#fff;
+               padding:0.75em 1.5em;
+               font-size:1.2rem;
+               border-radius:8px;
+               text-decoration:none;
+             ">
+            🚀 Start Quiz
+          </a>
+        </div>
+        """, unsafe_allow_html=True)
     
         st.stop()
-
+        
     # ─── Auto-refresh during quiz ─────────────────────────────────
     st_autorefresh(interval=2000, key="host_refresh")
 
