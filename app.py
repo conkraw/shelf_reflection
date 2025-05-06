@@ -259,6 +259,57 @@ if st.session_state.role == "host":
             set_current_index(new_idx)
             st.rerun()
 
+        if st.session_state.show_answer and idx == total_q - 1:
+          if st.button("🏁 Show Results"):
+              st.session_state.show_results = True
+              st.rerun()
+
+    # ─── Final Results Screen ────────────────────────────────────────────────────
+    if st.session_state.get("show_results", False):
+        st.title("🏆 Quiz Results")
+    
+        # 1) Gather all correct MC responses
+        resp_docs = db.collection("responses").stream()
+        stats = {}  # nickname -> {count: int, times: [float]}
+    
+        for d in resp_docs:
+            r = d.to_dict()
+            qid = r["question_id"]
+            # only MC questions with correct answer
+            question = questions[qid]
+            if question["type"] == "mc" and r.get("answer") == question.get("ans"):
+                nick = r["nickname"]
+                ts   = r["timestamp"]
+                dt   = ts.ToDatetime() if hasattr(ts, "ToDatetime") else ts
+                tsec = dt.timestamp()
+                if nick not in stats:
+                    stats[nick] = {"count": 0, "times": []}
+                stats[nick]["count"] += 1
+                stats[nick]["times"].append(tsec)
+    
+        # 2) Compute average response time per player
+        board = []
+        for nick, data in stats.items():
+            cnt    = data["count"]
+            avg_ts = sum(data["times"]) / len(data["times"])
+            board.append({"nick": nick, "count": cnt, "avg_ts": avg_ts})
+    
+        # 3) Sort: most correct, then fastest
+        board.sort(key=lambda x: (-x["count"], x["avg_ts"]))
+    
+        # 4) Display top 3
+        podium = board[:3]
+        if podium:
+            for place, entry in enumerate(podium, start=1):
+                st.markdown(
+                    f"**{place}. {entry['nick']}** — "
+                    f"{entry['count']} correct"
+                )
+        else:
+            st.write("No correct answers were submitted.")
+    
+        st.stop()
+      
     # ─── Student Responses ────────────────────────────────────────
     st.markdown("---")
     st.subheader("📋 Student Answers")
