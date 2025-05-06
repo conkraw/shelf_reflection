@@ -263,6 +263,45 @@ if st.session_state.role == "host":
           if st.button("🏁 Show Results"):
               st.session_state.show_results = True
               st.rerun()
+      
+    # ─── Student Responses ────────────────────────────────────────
+    st.markdown("---")
+    st.subheader("📋 Student Answers")
+
+    resp_docs = (
+        db.collection("responses")
+          .where("question_id", "==", idx)
+          .stream()
+    )
+    answers = [doc.to_dict().get("answer", "") for doc in resp_docs]
+
+    if answers:
+        random.shuffle(answers)
+        bg_colors = ["#E3F2FD", "#FCE4EC", "#E8F5E9", "#FFF3E0", "#F3E5F5"]
+        for i, a in enumerate(answers):
+            color = bg_colors[i % len(bg_colors)]
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: {color};
+                    padding: 16px;
+                    margin: 10px 0;
+                    border-radius: 10px;
+                    text-align: center;
+                    font-size: 1.4rem;
+                    font-weight: bold;
+                    transition: all 0.3s ease;
+                "
+                onmouseover="this.style.transform='scale(1.03)'"
+                onmouseout="this.style.transform='scale(1)'"
+                >
+                    {a}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    else:
+        st.write("No responses submitted yet.")
 
     # ─── Final Results Screen ────────────────────────────────────────────────────
     if st.session_state.get("show_results", False):
@@ -310,45 +349,6 @@ if st.session_state.role == "host":
     
         st.stop()
       
-    # ─── Student Responses ────────────────────────────────────────
-    st.markdown("---")
-    st.subheader("📋 Student Answers")
-
-    resp_docs = (
-        db.collection("responses")
-          .where("question_id", "==", idx)
-          .stream()
-    )
-    answers = [doc.to_dict().get("answer", "") for doc in resp_docs]
-
-    if answers:
-        random.shuffle(answers)
-        bg_colors = ["#E3F2FD", "#FCE4EC", "#E8F5E9", "#FFF3E0", "#F3E5F5"]
-        for i, a in enumerate(answers):
-            color = bg_colors[i % len(bg_colors)]
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: {color};
-                    padding: 16px;
-                    margin: 10px 0;
-                    border-radius: 10px;
-                    text-align: center;
-                    font-size: 1.4rem;
-                    font-weight: bold;
-                    transition: all 0.3s ease;
-                "
-                onmouseover="this.style.transform='scale(1.03)'"
-                onmouseout="this.style.transform='scale(1)'"
-                >
-                    {a}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-    else:
-        st.write("No responses submitted yet.")
-
 from streamlit_autorefresh import st_autorefresh
 
 # ─── Player View ───────────────────────────────────────────────────────────
