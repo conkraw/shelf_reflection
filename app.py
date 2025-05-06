@@ -9,30 +9,37 @@ import requests
 
 st.set_page_config(layout="wide")
 
-def display_repo_image(image_field):
+@st.cache_data(show_spinner=False)
+def find_image_url(image_field: str) -> str | None:
     """
-    Given q['image'] (e.g. "test" or "diagram.jpg"), 
-    attempts to load it from GitHub with any common extension.
+    Given an image_field like "test" or "diagram.jpg",
+    return the first raw.githubusercontent URL that exists, or None.
     """
     base = "https://raw.githubusercontent.com/conkraw/shelf_reflection/main/"
     name = image_field.strip()
-    
-    # If they already included an extension, just use that
-    if os.path.splitext(name)[1]:
-        st.image(base + name, use_container_width=True)
-        return
-    
-    # Otherwise try common ones
-    for ext in [".png", ".jpg", ".jpeg", ".gif"]:
-        try_url = base + name + ext
+
+    # Build candidate URLs
+    if os.path.splitext(name)[1]:  # has an extension
+        candidates = [base + name]
+    else:
+        candidates = [base + name + ext for ext in (".png", ".jpg", ".jpeg", ".gif")]
+
+    # HEAD each one, return the first that’s live
+    for url in candidates:
         try:
-            st.image(try_url, use_container_width=True)
-            return  # stop at first successful load
-        except:
-            continue
-    # if none worked, optionally show a placeholder or warning:
-    st.warning(f"Image '{name}' not found (tried png/jpg/jpeg/gif).")
-  
+            r = requests.head(url, timeout=3)
+            if r.status_code == 200:
+                return url
+        except requests.RequestException:
+            pass
+    return None
+
+def display_repo_image(image_field: str):
+    url = find_image_url(image_field)
+    if url:
+        st.image(url, use_container_width=True)
+    else:
+        st.warning(f"Could not find image `{image_field}` (tried png/jpg/jpeg/gif).")
 
 st.markdown("""
 <style>
