@@ -31,7 +31,8 @@ def display_repo_image(image_field: str):
             r = requests.get(url, timeout=5)
             if r.status_code == 200:
                 # we got it! render from bytes
-                st.image(BytesIO(r.content), use_container_width=True)
+                #st.image(BytesIO(r.content), use_container_width=True)
+                st.image(BytesIO(r.content))
                 return
         except requests.RequestException:
             pass
