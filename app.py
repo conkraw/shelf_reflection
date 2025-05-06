@@ -14,7 +14,7 @@ if "role" not in st.session_state:
     if st.button("Join"):
         if code == st.secrets["host_password"]:
             st.session_state.role = "host"
-            st.experimental_rerun()
+            st.rerun()
         elif code == st.secrets["game_pin"]:
             st.session_state.role = "player"
             st.rerun()
