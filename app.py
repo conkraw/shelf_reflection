@@ -90,6 +90,19 @@ def set_current_index(idx):
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
     st.title("🔧 Quiz Host Controller")
+    if st.button("🗑️ Reset Game Data"):
+        # 1) Delete participants
+        for doc in db.collection("participants").stream():
+            doc.reference.delete()
+        # 2) Delete responses
+        for doc in db.collection("responses").stream():
+            doc.reference.delete()
+        # 3) Delete the current game_state doc
+        db.document("game_state/current").delete()
+
+        st.success("✅ All game data has been reset.")
+        st.rerun()
+      
 
     params = st.query_params               # new property-based API
     if params.get("start_quiz") == ["1"]:
