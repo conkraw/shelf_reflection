@@ -264,17 +264,28 @@ from streamlit_autorefresh import st_autorefresh
 # ─── Player View ───────────────────────────────────────────────────────────
 if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
-    nick = st.text_input("Enter your nickname", key="nick")
-    if not nick:
-        st.info("Please choose a nickname to join the game.")
-        st.stop()
+
+    # 1) Nickname & join logic
     if not st.session_state.get("joined", False):
-        # write a participant record once per session
+        nick = st.text_input("Enter your nickname", key="nick")
+        if not nick:
+            st.info("Please choose a nickname to join the game.")
+            st.stop()
+
+        # Once they type a nick, record them and mark joined
         db.collection("participants").add({
             "nickname":  nick,
             "timestamp": firestore.SERVER_TIMESTAMP
         })
         st.session_state.joined = True
+        # Keep the nickname around for next runs
+        st.session_state.nick = nick
+        # Rerun so the text_input disappears
+        st.rerun()
+
+    # 2) After joining, show a greeting instead of the input
+    nick = st.session_state.nick
+    st.markdown(f"**👋 Hello, {nick}!**")
     
     # ←–– Auto-refresh every 2s
     st_autorefresh(interval=2000, key="player_refresh")
