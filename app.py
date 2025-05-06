@@ -421,7 +421,7 @@ if st.session_state.role == "player":
             })
             # mark as submitted and show confirmation
             st.session_state[submitted_key] = True
-            st.success("✅ Answer submitted!")
+            st.rerun()
 
     # 5) If already submitted, show this
     else:
