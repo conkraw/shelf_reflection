@@ -137,7 +137,6 @@ if st.session_state.role == "host":
               <p>Ask students to visit this page and enter the code to join.</p>
               <img src="data:image/png;base64,{b64}" width="200" />
               <br>
-              <a href="?start_quiz=1" class="start-btn">🚀 Start Quiz</a>
             </div>
             """,
             unsafe_allow_html=True,
