@@ -4,8 +4,34 @@ import random
 import qrcode
 from io import BytesIO
 import base64
+import os
 
 st.set_page_config(layout="wide")
+
+def display_repo_image(image_field):
+    """
+    Given q['image'] (e.g. "test" or "diagram.jpg"), 
+    attempts to load it from GitHub with any common extension.
+    """
+    base = "https://raw.githubusercontent.com/conkraw/shelf_reflection/main/"
+    name = image_field.strip()
+    
+    # If they already included an extension, just use that
+    if os.path.splitext(name)[1]:
+        st.image(base + name, use_column_width=True)
+        return
+    
+    # Otherwise try common ones
+    for ext in [".png", ".jpg", ".jpeg", ".gif"]:
+        try_url = base + name + ext
+        try:
+            st.image(try_url, use_column_width=True)
+            return  # stop at first successful load
+        except:
+            continue
+    # if none worked, optionally show a placeholder or warning:
+    st.warning(f"Image '{name}' not found (tried png/jpg/jpeg/gif).")
+  
 
 st.markdown("""
 <style>
@@ -272,6 +298,9 @@ if st.session_state.role == "host":
         # 1) Show question
         st.markdown(f"### Question {idx+1} / {total_q}")
         st.write(q["text"])
+        if q.get("image"):
+            display_repo_image(q["image"])
+
         if q["type"] == "mc":
             for opt in q["options"]:
                 st.write(f"- {opt}")
@@ -418,6 +447,8 @@ if st.session_state.role == "player":
     if not st.session_state.get(submitted_key, False):
         with st.form(key=f"form_{current_idx}"):
             st.markdown(f"### Q{current_idx+1}. {q['text']}")
+            if q.get("image"):
+                display_repo_image(q["image"])
             if q["type"] == "mc":
                 choice = st.radio("Choose one:", q["options"], key=f"mc_{current_idx}")
             else:
