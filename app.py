@@ -5,6 +5,7 @@ import qrcode
 from io import BytesIO
 import base64
 import os
+import requests
 
 st.set_page_config(layout="wide")
 
