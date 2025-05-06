@@ -36,7 +36,7 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-params = st.get_query_params()()
+params = st.experimental_get_query_params()
 if params.get("start_quiz") == ["1"]:
     st.session_state.quiz_started = True
     # Clear the param so refreshes don’t re-start
