@@ -7,6 +7,16 @@ import base64
 
 st.set_page_config(layout="wide")
 
+st.markdown("""
+<style>
+/* Center all Streamlit buttons */
+div.stButton > button {
+  margin: 0 auto;
+  display: block;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # 1) Ask for the code once
 if "role" not in st.session_state:
     st.title("🔐 Enter Quiz Code")
@@ -180,9 +190,14 @@ if st.session_state.role == "host":
                 "<p style='text-align:center; font-style:italic; color:#666;'>No one has joined yet.</p>",
                 unsafe_allow_html=True
             )
-            
-        st.stop()
-        
+
+         # This button will now be perfectly centered:
+        if st.button("🚀 Start Quiz"):
+            st.session_state.quiz_started = True
+            st.rerun()
+    
+        st.stop()  # don’t proceed until they click
+
     # ─── Auto-refresh during quiz ─────────────────────────────────
     st_autorefresh(interval=2000, key="host_refresh")
 
