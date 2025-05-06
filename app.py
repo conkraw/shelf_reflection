@@ -106,7 +106,7 @@ if st.session_state.role == "host":
         <div style="text-align:center;">
           <h1>🕒 Waiting for students to join...</h1>
           <h2>🔢 Entry Code: <code>1234</code></h2>
-          <p>Ask students to visit this page and enter the code to join.</p>
+          <p></p>
           <img src="data:image/png;base64,{b64}" width="200" />
           <br><br>
           <a href="?start_quiz=1"
