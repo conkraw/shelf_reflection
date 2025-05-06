@@ -110,9 +110,26 @@ if st.session_state.role == "host":
         )
     
         # Centered button using Streamlit layout
-        col1, col2, col3 = st.columns([5, 2, 5])
+        col1, col2, col3 = st.columns(3)
         with col2:
-            if st.button("🚀 Start Quiz"):
+            st.markdown(
+                """
+                <style>
+                .centered-button > button {
+                    width: 100%;
+                    background-color: #f63366;
+                    color: white;
+                    font-size: 1.1rem;
+                    border: none;
+                    padding: 0.6em;
+                    border-radius: 8px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            start = st.button("🚀 Start Quiz", key="centered_btn")
+            if start:
                 st.session_state.quiz_started = True
                 st.rerun()
     
