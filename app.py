@@ -393,7 +393,7 @@ if st.session_state.role == "player":
     st.markdown(f"**👋 Hello, {nick}!**")
     
     # ←–– Auto-refresh every 2s
-    st_autorefresh(interval=2000, key="player_refresh")
+    #st_autorefresh(interval=2000, key="player_refresh")
 
     # 1) Fetch host’s index and “lock it in” as active_idx
     fs_idx = get_current_index()
@@ -439,5 +439,6 @@ if st.session_state.role == "player":
     # 5) If already submitted, show this
     else:
         st.success("✅ Please look up at the screen")
+        st_autorefresh(interval=2000, key=f"refresh_after_{current_idx}")
 
 
