@@ -309,7 +309,7 @@ if st.session_state.role == "host":
                 st.info("No one has answered correctly yet.")
     
         # 5) Next Question button
-        if st.button("➡️ Next Question"):
+        if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
             new_idx = (idx + 1) % total_q
             st.session_state.host_idx    = new_idx
             st.session_state.show_answer = False
@@ -317,7 +317,7 @@ if st.session_state.role == "host":
             st.rerun()
 
         if st.session_state.show_answer and idx == total_q - 1:
-          if st.button("🏁 Show Results"):
+          if st.button("🏁 Show Results", key="show_results_btn"):
               st.session_state.show_results = True
               st.rerun()
       
