@@ -18,7 +18,7 @@ def display_repo_image(image_field):
     
     # If they already included an extension, just use that
     if os.path.splitext(name)[1]:
-        st.image(base + name, use_column_width=True)
+        st.image(base + name, use_container_width=True)
         return
     
     # Otherwise try common ones
