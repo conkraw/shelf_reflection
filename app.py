@@ -90,24 +90,33 @@ if st.session_state.role == "host":
 
     # ─── Waiting Room Screen ──────────────────────────────────────
     if not st.session_state.quiz_started:
-        st.header("🕒 Waiting for students to join...")
-        st.subheader("🔢 Entry Code: `1234`")
-        st.caption("Ask students to visit this page and enter the code to join.")
-
-        # Create QR code that links to the app
-        url = "https://peds-clerkship-shelf-reflection.streamlit.app/"  # 🔁 Replace with your real link
+        url = "https://peds-clerkship-shelf-reflection.streamlit.app/"  # your real link
         qr = qrcode.make(url)
         buf = BytesIO()
         qr.save(buf)
         b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-        st.image(f"data:image/png;base64,{b64}", width=200)
-
-        # Start button
-        if st.button("🚀 Start Quiz"):
-            st.session_state.quiz_started = True
-            st.rerun()
-
-        st.stop()  # Wait here until quiz starts
+    
+        # HTML wrapper to center everything
+        st.markdown(
+            f"""
+            <div style='text-align: center;'>
+                <h1 style='font-size: 2rem;'>🕒 Waiting for students to join...</h1>
+                <h2>🔢 Entry Code: <code style='font-size: 1.5rem;'>1234</code></h2>
+                <p style='font-size: 1rem;'>Ask students to visit this page and enter the code to join.</p>
+                <img src="data:image/png;base64,{b64}" width="200" />
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+        # Centered button using Streamlit layout
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("🚀 Start Quiz"):
+                st.session_state.quiz_started = True
+                st.rerun()
+    
+        st.stop()
 
     # ─── Auto-refresh during quiz ─────────────────────────────────
     st_autorefresh(interval=2000, key="host_refresh")
