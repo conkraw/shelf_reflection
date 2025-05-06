@@ -36,12 +36,11 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-params = st.experimental_get_query_params()
-
+params = st.query_params               # new property-based API
 if params.get("start_quiz") == ["1"]:
     st.session_state.quiz_started = True
-    # Clear the param so refreshes don’t re-start
-    st.set_query_params()
+    # clear the param so a refresh won’t re-start
+    st.set_query_params()              
     st.rerun()
 
 cur_ref = db.document("game_state/current")
