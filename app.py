@@ -267,25 +267,29 @@ if st.session_state.role == "player":
 
     # 1) Nickname & join logic
     if not st.session_state.get("joined", False):
-        nick = st.text_input("Enter your nickname", key="nick")
+        # widget uses its own key so it doesn’t collide
+        nick_input = st.text_input("Enter your nickname", key="nick_input")
         join_clicked = st.button("Join Game")
 
         if join_clicked:
-            if not nick.strip():
+            if not nick_input.strip():
                 st.error("Please enter a valid nickname.")
             else:
                 # record them exactly once
                 db.collection("participants").add({
-                    "nickname":  nick,
+                    "nickname":  nick_input,
                     "timestamp": firestore.SERVER_TIMESTAMP
                 })
-                # mark joined and remember name
+                # store cleanly under "nick"
+                st.session_state.nick   = nick_input
                 st.session_state.joined = True
-                st.session_state.nick   = nick
                 st.rerun()
 
         st.stop()
 
+    # 2) After joining, greet and proceed
+    nick = st.session_state.nick
+    st.markdown(f"**👋 Hello, {nick}!**")
     
     # ←–– Auto-refresh every 2s
     st_autorefresh(interval=2000, key="player_refresh")
