@@ -10,19 +10,16 @@ st.set_page_config(layout="wide")
 # 1) Ask for the code once
 if "role" not in st.session_state:
     st.title("🔐 Enter Quiz Code")
-    code = st.text_input("Please enter the host password or game pin:", type="password")
+    code = st.text_input("Password or game PIN", type="password")
     if st.button("Join"):
-        host_pwd = st.secrets["host_password"]
-        game_pin  = st.secrets["game_pin"]
-
-        if code == host_pwd:
+        if code == st.secrets["host_password"]:
             st.session_state.role = "host"
-            st.rerun()        # ← rerun immediately
-        elif code == game_pin:
+            st.experimental_rerun()
+        elif code == st.secrets["game_pin"]:
             st.session_state.role = "player"
-            st.rerun()        # ← rerun immediately
+            st.rerun()
         else:
-            st.error("❌ Invalid code. Try again.")
+            st.error("❌ Invalid code.")
     st.stop()
 
 # 2) Now that we have a role, we can import and initialize Firestore
