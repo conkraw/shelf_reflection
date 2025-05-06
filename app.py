@@ -205,20 +205,59 @@ if st.session_state.role == "host":
         st.session_state.host_idx = get_current_index()
     idx = st.session_state.host_idx
 
-    # ─── Show current question ────────────────────────────────────
-    st.markdown(f"### Question {idx+1} / {total_q}")
+    # ensure we have a show_answer flag
+    if "show_answer" not in st.session_state:
+        st.session_state.show_answer = False
+    
     q = questions[idx]
-    st.write(q["text"])
-    if q["type"] == "mc":
-        for opt in q["options"]:
-            st.write(f"- {opt}")
 
-    # ─── Advance button ───────────────────────────────────────────
-    if st.button("➡️ Next Question"):
-        new_idx = (idx + 1) % total_q
-        st.session_state.host_idx = new_idx
-        set_current_index(new_idx)
-        st.rerun()
+    if not st.session_state.show_answer:
+        # 1) Show question
+        st.markdown(f"### Question {idx+1} / {total_q}")
+        st.write(q["text"])
+        if q["type"] == "mc":
+            for opt in q["options"]:
+                st.write(f"- {opt}")
+    
+        # 2) Button to reveal answer
+        if st.button("Show Answer"):
+            st.session_state.show_answer = True
+            st.rerun()
+    
+    else:
+        # 3) Show the correct answer
+        correct = q.get("ans", "")
+        st.success(f"💡 Correct Answer: **{correct}**")
+    
+        # 4) If multiple‐choice, find first correct responder
+        if q["type"] == "mc":
+            # fetch all responses for this question
+            resp_docs = db.collection("responses") \
+                          .where("question_id", "==", idx) \
+                          .stream()
+            correct_resps = []
+            for d in resp_docs:
+                r = d.to_dict()
+                if r.get("answer") == correct:
+                    ts = r.get("timestamp")
+                    # convert Firestore ts to datetime if needed
+                    dt = ts.ToDatetime() if hasattr(ts, "ToDatetime") else ts
+                    correct_resps.append((r.get("nickname"), dt))
+            if correct_resps:
+                # pick the earliest
+                correct_resps.sort(key=lambda x: x[1])
+                first_nick = correct_resps[0][0]
+                st.info(f"🏆 First correct responder: **{first_nick}**")
+            else:
+                st.info("No one has answered correctly yet.")
+    
+        # 5) Next Question button
+        if st.button("➡️ Next Question"):
+            new_idx = (idx + 1) % total_q
+            st.session_state.host_idx    = new_idx
+            st.session_state.show_answer = False
+            set_current_index(new_idx)
+            st.rerun()
 
     # ─── Student Responses ────────────────────────────────────────
     st.markdown("---")
