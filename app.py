@@ -33,13 +33,6 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-params = st.query_params               # new property-based API
-if params.get("start_quiz") == ["1"]:
-    st.session_state.quiz_started = True
-    # clear the param so a refresh won’t re-start
-    st.set_query_params()              
-    st.rerun()
-
 cur_ref = db.document("game_state/current")
 if not cur_ref.get().exists:
     # Initialize to question 0 so players immediately see Q1
@@ -88,6 +81,13 @@ def set_current_index(idx):
 if st.session_state.role == "host":
     st.title("🔧 Quiz Host Controller")
 
+    params = st.query_params               # new property-based API
+    if params.get("start_quiz") == ["1"]:
+        st.session_state.quiz_started = True
+        # clear the param so a refresh won’t re-start
+        st.set_query_params()              
+        st.rerun()
+        
     # ─── Initialize quiz_started flag ─────────────────────────────
     if "quiz_started" not in st.session_state:
         st.session_state.quiz_started = False
