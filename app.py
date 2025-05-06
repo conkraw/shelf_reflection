@@ -195,6 +195,50 @@ if st.session_state.role == "host":
     
         st.stop()  # don’t proceed until they click
 
+# ─── RESULTS SCREEN ────────────────────────────────────────────────
+    if st.session_state.get("show_results", False):
+        st.header("🏆 Final Quiz Results")
+
+        # 1) Build stats: count correct MC answers & avg speed
+        participants = {}
+        all_resps   = db.collection("responses").stream()
+        questions   = load_questions()
+        for d in all_resps:
+            r    = d.to_dict()
+            qid  = r["question_id"]
+            q    = questions[qid]
+            # only MC corrects count
+            if q["type"] == "mc" and r["answer"] == q.get("ans"):
+                nick = r["nickname"]
+                ts   = r["timestamp"]
+                dt   = ts.ToDatetime() if hasattr(ts, "ToDatetime") else ts
+                sec  = dt.timestamp()
+                p    = participants.setdefault(nick, {"count":0, "times":[]})
+                p["count"]  += 1
+                p["times"].append(sec)
+
+        # 2) Prepare leaderboard
+        board = []
+        for nick, data in participants.items():
+            avg_time = sum(data["times"])/len(data["times"])
+            board.append((nick, data["count"], avg_time))
+        # sort by count desc, then avg_time asc
+        board.sort(key=lambda x:(-x[1], x[2]))
+
+        # 3) Show top 3
+        if board:
+            places = ["🥇", "🥈", "🥉"]
+            for i, entry in enumerate(board[:3]):
+                nick, cnt, _ = entry
+                st.markdown(f"{places[i]} **{nick}** — {cnt} correct")
+            # and list anyone else
+            if len(board) > 3:
+                st.markdown("**Others:** " + ", ".join(n for n,_,_ in board[3:]))
+        else:
+            st.write("No correct answers were submitted.")
+
+        st.stop()
+      
     # ─── Auto-refresh during quiz ─────────────────────────────────
     st_autorefresh(interval=2000, key="host_refresh")
 
@@ -302,52 +346,6 @@ if st.session_state.role == "host":
             )
     else:
         st.write("No responses submitted yet.")
-
-    # ─── Final Results Screen ────────────────────────────────────────────────────
-    if st.session_state.get("show_results", False):
-        st.title("🏆 Quiz Results")
-    
-        # 1) Gather all correct MC responses
-        resp_docs = db.collection("responses").stream()
-        stats = {}  # nickname -> {count: int, times: [float]}
-    
-        for d in resp_docs:
-            r = d.to_dict()
-            qid = r["question_id"]
-            # only MC questions with correct answer
-            question = questions[qid]
-            if question["type"] == "mc" and r.get("answer") == question.get("ans"):
-                nick = r["nickname"]
-                ts   = r["timestamp"]
-                dt   = ts.ToDatetime() if hasattr(ts, "ToDatetime") else ts
-                tsec = dt.timestamp()
-                if nick not in stats:
-                    stats[nick] = {"count": 0, "times": []}
-                stats[nick]["count"] += 1
-                stats[nick]["times"].append(tsec)
-    
-        # 2) Compute average response time per player
-        board = []
-        for nick, data in stats.items():
-            cnt    = data["count"]
-            avg_ts = sum(data["times"]) / len(data["times"])
-            board.append({"nick": nick, "count": cnt, "avg_ts": avg_ts})
-    
-        # 3) Sort: most correct, then fastest
-        board.sort(key=lambda x: (-x["count"], x["avg_ts"]))
-    
-        # 4) Display top 3
-        podium = board[:3]
-        if podium:
-            for place, entry in enumerate(podium, start=1):
-                st.markdown(
-                    f"**{place}. {entry['nick']}** — "
-                    f"{entry['count']} correct"
-                )
-        else:
-            st.write("No correct answers were submitted.")
-    
-        st.stop()
       
 from streamlit_autorefresh import st_autorefresh
 
