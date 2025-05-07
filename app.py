@@ -57,6 +57,7 @@ if "role" not in st.session_state:
     if st.button("Join"):
         if code == st.secrets["host_password"]:
             st.session_state.role = "host"
+            st.session_state.quiz_id = code
             st.rerun()
         elif code == st.secrets["game_pin"]:
             st.session_state.role = "player"
@@ -83,13 +84,9 @@ if not cur_ref.get().exists:
 
 # ─── 2) Helpers ───────────────────────────────────────────────────────────────
 def load_questions():
-    """
-    Attempts to load all docs from the `questions` collection,
-    ordered by name (i.e. "0", "1", "2", ...).
-    Returns a list of dicts, or raises a clear exception.
-    """
     try:
-        docs = db.collection("questions").order_by("__name__").stream()
+        quiz_id = st.session_state.quiz_id
+        docs = db.collection(quiz_id).order_by("__name__").stream()
         questions = []
         for doc in docs:
             data = doc.to_dict()
