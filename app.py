@@ -122,7 +122,7 @@ def set_current_index(idx):
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
-    st.title("🔧 Quiz Host Controller")
+    #st.title("🔧 Quiz Host Controller")
     if st.button("🗑️ Reset Game Data"):
         # 1) Delete participants
         for doc in db.collection("participants").stream():
