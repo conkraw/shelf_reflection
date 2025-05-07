@@ -276,10 +276,10 @@ if st.session_state.role == "host":
             places = ["🍬", "🍩", "🍭"]
             for i, entry in enumerate(board[:3]):
                 nick, cnt, _ = entry
-                st.markdown(f"{places[i]} **{nick}** — {cnt} correct")
+                st.header(f"{places[i]} **{nick}** — {cnt} correct")
             # and list anyone else
             if len(board) > 3:
-                st.markdown("**Others:** " + ", ".join(n for n,_,_ in board[3:]))
+                st.header("**Others:** " + ", ".join(n for n,_,_ in board[3:]))
         else:
             st.write("No correct answers were submitted.")
 
