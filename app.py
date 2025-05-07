@@ -236,6 +236,10 @@ if st.session_state.role == "host":
 
          # This button will now be perfectly centered:
         if st.button("🚀 Start Quiz"):
+            # mark in Firestore that the quiz is live
+            db.document("game_state/current").set(
+                {"current_index": 0, "started": True}, merge=True
+            )
             st.session_state.quiz_started = True
             st.rerun()
     
@@ -401,6 +405,13 @@ from streamlit_autorefresh import st_autorefresh
 # ─── Player View ───────────────────────────────────────────────────────────
 if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
+
+    # ─── WAIT FOR HOST ────────────────────────────────
+    status = db.document("game_state/current").get().to_dict() or {}
+    if not status.get("started", False):
+        st.warning("⏳ Waiting for the host to start the quiz…")
+        st.stop()
+
 
     # 1) Nickname & join logic
     if not st.session_state.get("joined", False):
