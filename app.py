@@ -383,7 +383,7 @@ if st.session_state.role == "host":
             new_idx = (idx + 1) % total_q
             st.session_state.host_idx    = new_idx
             st.session_state.show_answer = False
-            ame_state_ref.set({"current_index": new_idx}, merge=True)
+            game_state_ref.set({"current_index": new_idx}, merge=True)
             st.rerun()
 
         if st.session_state.show_answer and idx == total_q - 1:
