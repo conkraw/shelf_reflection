@@ -57,16 +57,15 @@ if "role" not in st.session_state:
     if st.button("Join"):
         if code == st.secrets["host_password"]:
             st.session_state.role = "host"
-            st.session_state.quiz_id = code
+            st.session_state.quiz_id = st.secrets["quiz_id"]  # ✅ use actual quiz ID
             st.rerun()
         elif code == st.secrets["game_pin"]:
             st.session_state.role = "player"
-            st.session_state.quiz_id = code
+            st.session_state.quiz_id = st.secrets["quiz_id"]  # ✅ same quiz ID for player
             st.rerun()
         else:
             st.error("❌ Invalid code.")
     st.stop()
-
 # 2) Now that we have a role, we can import and initialize Firestore
 import json, firebase_admin
 from firebase_admin import credentials, firestore
