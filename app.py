@@ -118,7 +118,10 @@ def get_current_index():
     return data.get("current_index", 0)
 
 def set_current_index(idx):
-    db.document("game_state/current").set({"current_index": idx})
+    db.document("game_state/current").set(
+        {"current_index": idx},
+        merge=True           # <-- preserves any other keys, like "started"
+    )
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
