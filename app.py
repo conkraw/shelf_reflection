@@ -403,13 +403,17 @@ if st.session_state.role == "player":
 
     # 0) Device choice (only once)
     if "device" not in st.session_state:
-        device = st.radio(
-            "Which device are you using?",
+        st.markdown("**Which device are you using?**")
+        device_choice = st.radio(
+            "",
             ["💻 Computer", "📱 Mobile"],
             key="device_selector",
         )
-        st.session_state.device = device
-        st.rerun()
+        if st.button("Confirm Device"):
+            st.session_state.device = device_choice
+            st.rerun()
+        # stop everything else until they confirm
+        st.stop()
     device = st.session_state.device
 
     # 1) Nickname & join logic
