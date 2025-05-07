@@ -407,7 +407,7 @@ if st.session_state.role == "player":
 
     # ─── 1) Nickname & join logic ────────────────────────────────────
     if not st.session_state.get("joined", False):
-        nick = st.text_input("Enter your nickname", key="nick_input")
+        nick = st.text_input("Pick a fun nickname to play (avoid using real names)", key="nick_input")
         if st.button("Join Game"):
             if not nick.strip():
                 st.error("Please enter a valid nickname.")
@@ -431,6 +431,21 @@ if st.session_state.role == "player":
     status = db.document("game_state/current").get().to_dict() or {}
     if not status.get("started", False):
         st.warning("⏳ Waiting for the host to start the quiz…")
+        
+        st.markdown("""
+        ---
+        ### ℹ️ Instructions for Participants
+        
+        - ⏱️ **There is no timer.** The question ends when the host reveals the answer.
+        - 💡 **These questions are meant to enhance your learning** and support your growth as future physicians.
+        - 🔍 While we’ve carefully reviewed all content, **some questions may still have errors.** Please feel free to reach out if you notice anything that seems incorrect.
+        - 📚 We encourage you to **use your own clinical reasoning and trusted resources** to reflect on each question.
+        - 🏅 **Top scorers are displayed at the end** — not to compete, but to recognize engagement and effort!
+        - 🤝 This is a **low-stakes, supportive environment** — your participation is what matters most.
+        
+        ---
+        """)
+
         st.stop()
 
     # 1) Fetch host’s index and “lock it in” as active_idx
