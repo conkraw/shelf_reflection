@@ -131,8 +131,6 @@ def set_current_index(idx):
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
-    #st.title("🔧 Quiz Host Controller")
-
     if "quiz_id" not in st.session_state:
         quiz = st.selectbox(
             "Which quiz do you want to host?", 
@@ -150,6 +148,7 @@ if st.session_state.role == "host":
     game_state_ref   = base.collection("game_state").document("current")
     participants_ref = base.collection("participants")
     responses_ref    = base.collection("responses")
+    questions_ref   = base.collection("questions")
     
     # initialize game_state if missing
     if not game_state_ref.get().exists:
