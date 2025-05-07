@@ -80,20 +80,20 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# ─── SCOPE ALL DATA TO THIS QUIZ ────────────────────────────────────
-quiz_id = st.session_state.quiz_id
-base     = db.collection("quizzes").document(quiz_id)
-game_state_ref  = base.collection("game_state").document("current")
-participants_ref = base.collection("participants")
-responses_ref    = base.collection("responses")
+if "quiz_id" in st.session_state:
+    quiz_id = st.session_state.quiz_id
+    base     = db.collection("quizzes").document(quiz_id)
 
-# initialize game_state if missing
-if not game_state_ref.get().exists:
-    game_state_ref.set({"current_index": 0})
+    game_state_ref   = base.collection("game_state").document("current")
+    participants_ref = base.collection("participants")
+    responses_ref    = base.collection("responses")
+
+    # initialize the game_state doc if it didn't exist yet
+    if not game_state_ref.get().exists:
+        game_state_ref.set({"current_index": 0, "started": False})
 
 # ─── 2) Helpers ───────────────────────────────────────────────────────────────
 def load_questions():
-
     try:
         qid = st.session_state.quiz_id
         base = db.collection("quizzes").document(st.session_state.quiz_id)
@@ -142,6 +142,18 @@ if st.session_state.role == "host":
             st.session_state.quiz_id = quiz
             st.rerun()
         st.stop()
+
+    quiz_id = st.session_state.quiz_id
+    base     = db.collection("quizzes").document(quiz_id)
+    
+    # now scoped references:
+    game_state_ref   = base.collection("game_state").document("current")
+    participants_ref = base.collection("participants")
+    responses_ref    = base.collection("responses")
+    
+    # initialize game_state if missing
+    if not game_state_ref.get().exists:
+        game_state_ref.set({"current_index": 0, "started": False})
 
     
     if st.button("🗑️ Reset Game Data"):
