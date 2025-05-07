@@ -396,7 +396,7 @@ if st.session_state.role == "host":
     st.subheader("📋 Student Answers")
 
     resp_docs = (
-        db.collection("responses")
+        responses_ref
           .where("question_id", "==", idx)
           .stream()
     )
