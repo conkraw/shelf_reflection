@@ -6,6 +6,7 @@ from io import BytesIO
 import base64
 import os
 import requests
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(layout="wide")
 
@@ -396,61 +397,89 @@ if st.session_state.role == "host":
     else:
         st.write("No responses submitted yet.")
       
-from streamlit_autorefresh import st_autorefresh
-
 # ─── Player View ───────────────────────────────────────────────────────────
 if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
 
+    # 0) Device choice (only once)
+    if "device" not in st.session_state:
+        device = st.radio(
+            "Which device are you using?",
+            ["💻 Computer", "📱 Mobile"],
+            key="device_selector",
+        )
+        st.session_state.device = device
+        st.experimental_rerun()
+    device = st.session_state.device
+
     # 1) Nickname & join logic
     if not st.session_state.get("joined", False):
-        # widget uses its own key so it doesn’t collide
         nick_input = st.text_input("Enter your nickname", key="nick_input")
         join_clicked = st.button("Join Game")
-
         if join_clicked:
             if not nick_input.strip():
                 st.error("Please enter a valid nickname.")
             else:
-                # record them exactly once
                 db.collection("participants").add({
                     "nickname":  nick_input,
                     "timestamp": firestore.SERVER_TIMESTAMP
                 })
-                # store cleanly under "nick"
-                st.session_state.nick   = nick_input
+                st.session_state.nick = nick_input
                 st.session_state.joined = True
-                st.rerun()
-
+                st.experimental_rerun()
         st.stop()
 
-    # 2) After joining, greet and proceed
     nick = st.session_state.nick
     st.markdown(f"**👋 Hello, {nick}!**")
-    
-    # ←–– Auto-refresh every 2s
-    #st_autorefresh(interval=2000, key="player_refresh")
 
-    # 1) Fetch host’s index and “lock it in” as active_idx
+    # 2) Fetch current question
     fs_idx = get_current_index()
     if ("active_idx" not in st.session_state) or (st.session_state.active_idx != fs_idx):
         st.session_state.active_idx = fs_idx
-        # clear any old submitted flag for this question
         st.session_state.pop(f"submitted_{fs_idx}", None)
-
     current_idx = st.session_state.active_idx
 
-    # 2) Load the question
     q_doc = db.collection("questions").document(str(current_idx)).get()
     if not q_doc.exists:
         st.error(f"No question found for index {current_idx}")
         st.stop()
     q = q_doc.to_dict()
 
-    # 3) Single submitted flag
-    submitted_key = f"submitted_{current_idx}"
+    # 3) MOBILE: tappable buttons for MC, or reveal answer for text
+    if device.startswith("📱"):
+        st.markdown(f"### Q{current_idx+1}. {q['text']}")
+        if q.get("image"):
+            display_repo_image(q["image"])
 
-    # 4) Show the form if not yet submitted
+        mobile_key = f"mobile_submitted_{current_idx}"
+
+        if q["type"] == "mc":
+            st.write("**Tap your answer:**")
+            cols = st.columns(2)
+            if not st.session_state.get(mobile_key, False):
+                for i, opt in enumerate(q["options"]):
+                    col = cols[i % 2]
+                    label = f"{chr(65+i)}. {opt}"
+                    if col.button(label, key=f"mob_{current_idx}_{i}"):
+                        db.collection("responses").add({
+                            "question_id": current_idx,
+                            "nickname":    nick,
+                            "answer":      opt,
+                            "timestamp":   firestore.SERVER_TIMESTAMP
+                        })
+                        st.session_state[mobile_key] = True
+                        st.success("✅ Answer recorded. Please look up.")
+            else:
+                st.success("✅ You’ve already submitted. Please look up.")
+
+        else:
+            # free-text: just show correct answer
+            st.success(f"✅ Correct Answer: **{q.get('ans','(no answer)')}**")
+
+        st.stop()
+
+    # 4) COMPUTER: original form logic
+    submitted_key = f"submitted_{current_idx}"
     if not st.session_state.get(submitted_key, False):
         with st.form(key=f"form_{current_idx}"):
             st.markdown(f"### Q{current_idx+1}. {q['text']}")
@@ -463,18 +492,15 @@ if st.session_state.role == "player":
             clicked = st.form_submit_button("Submit Answer")
 
         if clicked:
-            # write once
             db.collection("responses").add({
                 "question_id": current_idx,
                 "nickname":    nick,
                 "answer":      choice,
                 "timestamp":   firestore.SERVER_TIMESTAMP
             })
-            # mark as submitted and show confirmation
             st.session_state[submitted_key] = True
-            st.rerun()
+            st.experimental_rerun()
 
-    # 5) If already submitted, show this
     else:
         st.success("✅ Please look up at the screen")
         st_autorefresh(interval=2000, key=f"refresh_after_{current_idx}")
