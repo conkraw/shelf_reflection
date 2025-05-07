@@ -447,9 +447,9 @@ if st.session_state.role == "player":
 
     # 3) MOBILE: tappable buttons for MC, or reveal answer for text
     if device.startswith("📱"):
-        st.markdown(f"### Q{current_idx+1}. {q['text']}")
-        if q.get("image"):
-            display_repo_image(q["image"])
+        #st.markdown(f"### Q{current_idx+1}. {q['text']}")
+        #if q.get("image"):
+        #    display_repo_image(q["image"])
 
         mobile_key = f"mobile_submitted_{current_idx}"
 
