@@ -401,45 +401,36 @@ if st.session_state.role == "host":
 if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
 
-    # ─── 0) Device choice (only once) ─────────────────────────────────────────
-    if "device" not in st.session_state:
-        st.subheader("Which device are you using?")
-        with st.form("device_form"):
-            device_choice = st.radio(
-                "",
-                ["💻 Computer", "📱 Mobile"],
-                key="device_selector"
-            )
-            confirm = st.form_submit_button("Confirm Device")
-        if confirm:
-            st.session_state.device = device_choice
-            st.rerun()
-        else:
-            # Stop here until they confirm
-            st.stop()
-    
-    device = st.session_state.device
-
-
-    # 1) Nickname & join logic
+    # ─── 1) Device + Nickname Join Form ───────────────────────────────────────
     if not st.session_state.get("joined", False):
-        nick_input = st.text_input("Enter your nickname", key="nick_input")
-        join_clicked = st.button("Join Game")
+        st.subheader("Join the Quiz")
+        with st.form("join_form"):
+            device_choice = st.radio(
+                "Which device are you using?",
+                ["💻 Computer", "📱 Mobile"],
+                index=0,
+                key="device_selector",
+            )
+            nick_input = st.text_input("Enter your nickname", key="nick_input")
+            join_clicked = st.form_submit_button("Join Game")
+    
         if join_clicked:
             if not nick_input.strip():
                 st.error("Please enter a valid nickname.")
-            else:
-                db.collection("participants").add({
-                    "nickname":  nick_input,
-                    "timestamp": firestore.SERVER_TIMESTAMP
-                })
-                st.session_state.nick = nick_input
-                st.session_state.joined = True
-                st.rerun()
-        st.stop()
-
-    nick = st.session_state.nick
-    st.markdown(f"**👋 Hello, {nick}!**")
+                st.stop()
+            # save both pieces of info at once
+            st.session_state.device = device_choice
+            st.session_state.nick   = nick_input
+            st.session_state.joined = True
+    
+        else:
+            # hold the UI here until they click Join
+            st.stop()
+    
+    # Now we know they're joined
+    device = st.session_state.device
+    nick   = st.session_state.nick
+    st.markdown(f"**👋 Hello, {nick}! — on your {device}**")
 
     # 2) Fetch current question
     fs_idx = get_current_index()
