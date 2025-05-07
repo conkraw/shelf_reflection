@@ -243,7 +243,7 @@ if st.session_state.role == "host":
 
 # ─── RESULTS SCREEN ────────────────────────────────────────────────
     if st.session_state.get("show_results", False):
-        st.header("🏆 Final Quiz Results")
+        st.markdown("<h2 style='text-align: center;'>🏆 Final Quiz Results</h2>",unsafe_allow_html=True)
 
         # 1) Build stats: count correct MC answers & avg speed
         participants = {}
