@@ -273,7 +273,7 @@ if st.session_state.role == "host":
 
         # 3) Show top 3
         if board:
-            places = ["🥇", "🥈", "🥉"]
+            places = ["🍬", "🍩", "🍭"]
             for i, entry in enumerate(board[:3]):
                 nick, cnt, _ = entry
                 st.markdown(f"{places[i]} **{nick}** — {cnt} correct")
