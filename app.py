@@ -409,7 +409,7 @@ if st.session_state.role == "player":
             key="device_selector",
         )
         st.session_state.device = device
-        st.experimental_rerun()
+        st.rerun()
     device = st.session_state.device
 
     # 1) Nickname & join logic
@@ -426,7 +426,7 @@ if st.session_state.role == "player":
                 })
                 st.session_state.nick = nick_input
                 st.session_state.joined = True
-                st.experimental_rerun()
+                st.rerun()
         st.stop()
 
     nick = st.session_state.nick
@@ -499,7 +499,7 @@ if st.session_state.role == "player":
                 "timestamp":   firestore.SERVER_TIMESTAMP
             })
             st.session_state[submitted_key] = True
-            st.experimental_rerun()
+            st.rerun()
 
     else:
         st.success("✅ Please look up at the screen")
