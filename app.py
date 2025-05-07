@@ -401,20 +401,22 @@ if st.session_state.role == "host":
 if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
 
-    # 0) Device choice (only once)
+    # ─── 0) Device choice (only once) ─────────────────────────────────────────
     if "device" not in st.session_state:
-        st.markdown("**Which device are you using?**")
+        st.subheader("Which device are you using?")
         device_choice = st.radio(
-            "",
-            ["💻 Computer", "📱 Mobile"],
-            key="device_selector",
+            "", 
+            ["💻 Computer", "📱 Mobile"], 
+            key="device_selector"
         )
-        if st.button("Confirm Device"):
+        if st.button("Confirm Device", key="confirm_device"):
             st.session_state.device = device_choice
             st.rerun()
-        # stop everything else until they confirm
+        # nothing else should run until they've confirmed
         st.stop()
+    
     device = st.session_state.device
+
 
     # 1) Nickname & join logic
     if not st.session_state.get("joined", False):
