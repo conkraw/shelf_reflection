@@ -454,6 +454,14 @@ if st.session_state.role == "player":
 
     # Greet them once joined
     nick = st.session_state.nick
+
+     # ─── 1b) Scope *this* session’s Firestore refs ────────────────
+    quiz_id = st.session_state.quiz_id
+    base     = db.collection("quizzes").document(quiz_id)
+    game_state_ref   = base.collection("game_state").document("current")
+    participants_ref = base.collection("participants")
+    responses_ref    = base.collection("responses")
+    
     st.markdown(f"**👋 Hello, {nick}!**")
 
     st_autorefresh(interval=2000, key="waiting_for_host")
