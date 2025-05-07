@@ -433,6 +433,14 @@ from streamlit_autorefresh import st_autorefresh
 if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
 
+    # ─── 1b) Scope *this* session’s Firestore refs ────────────────
+    quiz_id = st.session_state.quiz_id
+    base     = db.collection("quizzes").document(quiz_id)
+    game_state_ref   = base.collection("game_state").document("current")
+    participants_ref = base.collection("participants")
+    responses_ref    = base.collection("responses")
+    questions_ref   = base.collection("questions")
+
     # ─── 1) Nickname & join logic ────────────────────────────────────
     if not st.session_state.get("joined", False):
         nick = st.text_input("Pick a fun nickname to play (avoid using real names)", key="nick_input")
@@ -451,14 +459,6 @@ if st.session_state.role == "player":
 
     # Greet them once joined
     nick = st.session_state.nick
-
-     # ─── 1b) Scope *this* session’s Firestore refs ────────────────
-    quiz_id = st.session_state.quiz_id
-    base     = db.collection("quizzes").document(quiz_id)
-    game_state_ref   = base.collection("game_state").document("current")
-    participants_ref = base.collection("participants")
-    responses_ref    = base.collection("responses")
-    questions_ref   = base.collection("questions")
     
     st.markdown(f"**👋 Hello, {nick}!**")
 
