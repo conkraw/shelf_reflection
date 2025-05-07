@@ -404,16 +404,19 @@ if st.session_state.role == "player":
     # ─── 0) Device choice (only once) ─────────────────────────────────────────
     if "device" not in st.session_state:
         st.subheader("Which device are you using?")
-        device_choice = st.radio(
-            "", 
-            ["💻 Computer", "📱 Mobile"], 
-            key="device_selector"
-        )
-        if st.button("Confirm Device", key="confirm_device"):
+        with st.form("device_form"):
+            device_choice = st.radio(
+                "",
+                ["💻 Computer", "📱 Mobile"],
+                key="device_selector"
+            )
+            confirm = st.form_submit_button("Confirm Device")
+        if confirm:
             st.session_state.device = device_choice
             st.rerun()
-        # nothing else should run until they've confirmed
-        st.stop()
+        else:
+            # Stop here until they confirm
+            st.stop()
     
     device = st.session_state.device
 
