@@ -61,6 +61,7 @@ if "role" not in st.session_state:
             st.rerun()
         elif code == st.secrets["game_pin"]:
             st.session_state.role = "player"
+            st.session_state.quiz_id = code
             st.rerun()
         else:
             st.error("❌ Invalid code.")
