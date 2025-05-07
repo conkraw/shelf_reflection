@@ -406,41 +406,32 @@ from streamlit_autorefresh import st_autorefresh
 if st.session_state.role == "player":
     st.title("🕹️ Quiz Player")
 
+    # ─── 1) Nickname & join logic ────────────────────────────────────
+    if not st.session_state.get("joined", False):
+        nick = st.text_input("Enter your nickname", key="nick_input")
+        if st.button("Join Game"):
+            if not nick.strip():
+                st.error("Please enter a valid nickname.")
+            else:
+                db.collection("participants").add({
+                    "nickname":  nick,
+                    "timestamp": firestore.SERVER_TIMESTAMP
+                })
+                st.session_state.nick   = nick
+                st.session_state.joined = True
+                st.rerun()
+        st.stop()  # nothing else until they join
+
+    # Greet them once joined
+    nick = st.session_state.nick
+    st.markdown(f"**👋 Hello, {nick}!**")
+
+    
     # ─── WAIT FOR HOST ────────────────────────────────
     status = db.document("game_state/current").get().to_dict() or {}
     if not status.get("started", False):
         st.warning("⏳ Waiting for the host to start the quiz…")
         st.stop()
-
-
-    # 1) Nickname & join logic
-    if not st.session_state.get("joined", False):
-        # widget uses its own key so it doesn’t collide
-        nick_input = st.text_input("Enter your nickname", key="nick_input")
-        join_clicked = st.button("Join Game")
-
-        if join_clicked:
-            if not nick_input.strip():
-                st.error("Please enter a valid nickname.")
-            else:
-                # record them exactly once
-                db.collection("participants").add({
-                    "nickname":  nick_input,
-                    "timestamp": firestore.SERVER_TIMESTAMP
-                })
-                # store cleanly under "nick"
-                st.session_state.nick   = nick_input
-                st.session_state.joined = True
-                st.rerun()
-
-        st.stop()
-
-    # 2) After joining, greet and proceed
-    nick = st.session_state.nick
-    st.markdown(f"**👋 Hello, {nick}!**")
-    
-    # ←–– Auto-refresh every 2s
-    #st_autorefresh(interval=2000, key="player_refresh")
 
     # 1) Fetch host’s index and “lock it in” as active_idx
     fs_idx = get_current_index()
