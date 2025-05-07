@@ -52,18 +52,22 @@ div.stButton > button {
 
 # 1) Ask for the code once
 if "role" not in st.session_state:
-    st.title("🔐 Enter Quiz Code")
-    code = st.text_input("Password or game PIN", type="password")
+    st.title("🔐 Enter Quiz PIN or Host Password")
+    code = st.text_input("Code", type="password")
     if st.button("Join"):
+        # host
         if code == st.secrets["host_password"]:
             st.session_state.role = "host"
             st.rerun()
-        elif code == st.secrets["game_pin"]:
-            st.session_state.role = "player"
+        # player
+        elif code in st.secrets["quiz_pins"]:
+            st.session_state.role    = "player"
+            st.session_state.quiz_id = st.secrets["quiz_pins"][code]
             st.rerun()
         else:
             st.error("❌ Invalid code.")
     st.stop()
+
 
 # 2) Now that we have a role, we can import and initialize Firestore
 import json, firebase_admin
@@ -83,13 +87,11 @@ if not cur_ref.get().exists:
 
 # ─── 2) Helpers ───────────────────────────────────────────────────────────────
 def load_questions():
-    """
-    Attempts to load all docs from the `questions` collection,
-    ordered by name (i.e. "0", "1", "2", ...).
-    Returns a list of dicts, or raises a clear exception.
-    """
+
     try:
-        docs = db.collection("questions").order_by("__name__").stream()
+        qid = st.session_state.quiz_id
+        docs = (db.collection("questions").where("quiz_id", "==", qid).order_by("__name__").stream())
+    # 
         questions = []
         for doc in docs:
             data = doc.to_dict()
@@ -123,6 +125,18 @@ def set_current_index(idx):
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
     #st.title("🔧 Quiz Host Controller")
+
+    if "quiz_id" not in st.session_state:
+        quiz = st.selectbox(
+            "Which quiz do you want to host?", 
+            list(st.secrets["quiz_pins"].values())
+        )
+        if st.button("Select Quiz"):
+            st.session_state.quiz_id = quiz
+            st.rerun()
+        st.stop()
+
+    
     if st.button("🗑️ Reset Game Data"):
         # 1) Delete participants
         for doc in db.collection("participants").stream():
