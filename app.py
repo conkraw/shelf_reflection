@@ -132,7 +132,7 @@ if st.session_state.role == "host":
             doc.reference.delete()
         # 3) Delete the current game_state doc
         db.document("game_state/current").delete()
-
+        
         st.success("✅ All game data has been reset.")
         st.rerun()
       
@@ -236,13 +236,12 @@ if st.session_state.role == "host":
 
          # This button will now be perfectly centered:
         if st.button("🚀 Start Quiz"):
-            # mark in Firestore that the quiz is live
+            # Mark in Firestore that the quiz has started
             db.document("game_state/current").set(
-                {"current_index": 0, "started": True}, merge=True
+                {"started": True}, merge=True
             )
             st.session_state.quiz_started = True
             st.rerun()
-    
         st.stop()  # don’t proceed until they click
 
 # ─── RESULTS SCREEN ────────────────────────────────────────────────
