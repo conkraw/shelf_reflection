@@ -80,17 +80,24 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-cur_ref = db.document("game_state/current")
-if not cur_ref.get().exists:
-    # Initialize to question 0 so players immediately see Q1
-    cur_ref.set({"current_index": 0})
+# ─── SCOPE ALL DATA TO THIS QUIZ ────────────────────────────────────
+quiz_id = st.session_state.quiz_id
+base     = db.collection("quizzes").document(quiz_id)
+game_state_ref  = base.collection("game_state").document("current")
+participants_ref = base.collection("participants")
+responses_ref    = base.collection("responses")
+
+# initialize game_state if missing
+if not game_state_ref.get().exists:
+    game_state_ref.set({"current_index": 0})
 
 # ─── 2) Helpers ───────────────────────────────────────────────────────────────
 def load_questions():
 
     try:
         qid = st.session_state.quiz_id
-        docs = (db.collection("questions").where("quiz_id", "==", qid).order_by("__name__").stream())
+        base = db.collection("quizzes").document(st.session_state.quiz_id)
+        docs = base.collection("questions").order_by("__name__").stream()
     # 
         questions = []
         for doc in docs:
@@ -111,7 +118,7 @@ def load_questions():
 
 # ─── 3. Data Model Helpers ────────────────────────────────────────────────────
 def get_current_index():
-    doc_ref = db.document("game_state/current")
+    doc_ref = game_state_ref
     doc = doc_ref.get()
     if not doc.exists:
         # no game_state yet → start at 0
@@ -120,7 +127,7 @@ def get_current_index():
     return data.get("current_index", 0)
 
 def set_current_index(idx):
-    db.document("game_state/current").set({"current_index": idx})
+    game_state_ref.set({"current_index": idx})
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
@@ -139,13 +146,13 @@ if st.session_state.role == "host":
     
     if st.button("🗑️ Reset Game Data"):
         # 1) Delete participants
-        for doc in db.collection("participants").stream():
+        for doc in participants_ref.stream():
             doc.reference.delete()
         # 2) Delete responses
-        for doc in db.collection("responses").stream():
+        for doc in responses_ref.stream():
             doc.reference.delete()
         # 3) Delete the current game_state doc
-        db.document("game_state/current").delete()
+        game_state_ref.delete()
         
         st.success("✅ All game data has been reset.")
         st.rerun()
@@ -206,9 +213,9 @@ if st.session_state.role == "host":
         st_autorefresh(interval=2000, key="host_wait_refresh")
     
         # Fetch & order by join time
-        docs = db.collection("participants") \
-                 .order_by("timestamp") \
-                 .stream()
+        docs = participants_ref \
+           .order_by("timestamp") \
+           .stream()
     
         rows = []
         for i, d in enumerate(docs, start=1):
@@ -251,9 +258,7 @@ if st.session_state.role == "host":
          # This button will now be perfectly centered:
         if st.button("🚀 Start Quiz"):
             # Mark in Firestore that the quiz has started
-            db.document("game_state/current").set(
-                {"started": True}, merge=True
-            )
+            game_state_ref.set({"started": True}, merge=True)
             st.session_state.quiz_started = True
             st.rerun()
         st.stop()  # don’t proceed until they click
@@ -264,7 +269,7 @@ if st.session_state.role == "host":
 
         # 1) Build stats: count correct MC answers & avg speed
         participants = {}
-        all_resps   = db.collection("responses").stream()
+        all_resps   = responses_ref.stream()
         questions   = load_questions()
         for d in all_resps:
             r    = d.to_dict()
@@ -342,9 +347,9 @@ if st.session_state.role == "host":
         # 4) If multiple‐choice, find first correct responder
         if q["type"] == "mc":
             # fetch all responses for this question
-            resp_docs = db.collection("responses") \
-                          .where("question_id", "==", idx) \
-                          .stream()
+            resp_docs = responses_ref \
+                  .where("question_id", "==", idx) \
+                  .stream()
             correct_resps = []
             for d in resp_docs:
                 r = d.to_dict()
@@ -366,7 +371,7 @@ if st.session_state.role == "host":
             new_idx = (idx + 1) % total_q
             st.session_state.host_idx    = new_idx
             st.session_state.show_answer = False
-            set_current_index(new_idx)
+            ame_state_ref.set({"current_index": new_idx}, merge=True)
             st.rerun()
 
         if st.session_state.show_answer and idx == total_q - 1:
@@ -426,7 +431,7 @@ if st.session_state.role == "player":
             if not nick.strip():
                 st.error("Please enter a valid nickname.")
             else:
-                db.collection("participants").add({
+                participants_ref.add({
                     "nickname":  nick,
                     "timestamp": firestore.SERVER_TIMESTAMP
                 })
@@ -442,7 +447,7 @@ if st.session_state.role == "player":
     st_autorefresh(interval=2000, key="waiting_for_host")
     
     # ─── WAIT FOR HOST ────────────────────────────────
-    status = db.document("game_state/current").get().to_dict() or {}
+    status = game_state_ref.get().to_dict() or {}
     if not status.get("started", False):
         st.warning("⏳ Waiting for the host to start the quiz…")
         
@@ -495,7 +500,7 @@ if st.session_state.role == "player":
 
         if clicked:
             # write once
-            db.collection("responses").add({
+            responses_ref.add({
                 "question_id": current_idx,
                 "nickname":    nick,
                 "answer":      choice,
