@@ -143,8 +143,6 @@ if st.session_state.role == "host":
 
     quiz_id = st.session_state.quiz_id
     base     = db.collection("quizzes").document(quiz_id)
-    
-    # now scoped references:
     game_state_ref   = base.collection("game_state").document("current")
     participants_ref = base.collection("participants")
     responses_ref    = base.collection("responses")
