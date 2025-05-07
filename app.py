@@ -458,7 +458,7 @@ if st.session_state.role == "player":
     current_idx = st.session_state.active_idx
 
     # 2) Load the question
-    q_doc = db.collection("questions").document(str(current_idx)).get()
+    q_doc = db.collection(quiz_id).document(str(current_idx)).get()
     if not q_doc.exists:
         st.error(f"No question found for index {current_idx}")
         st.stop()
