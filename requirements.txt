@@ -14,5 +14,4 @@ firebase-admin
 streamlit-autorefresh
 qrcode
 requests
-matplotlib.pyplot
 matplotlib
