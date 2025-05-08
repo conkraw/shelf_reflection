@@ -348,7 +348,7 @@ if st.session_state.role == "host":
             ax.set_title("Student Answers")
             for bar in bars:
                 width = bar.get_width()
-                ax.text(width + 0.2, bar.get_y() + bar.get_height()/2, str(int(width)), va="center")
+                ax.text(width + 0.2,bar.get_y() + bar.get_height() / 2,str(int(width)),va="center",fontsize=8)
             st.pyplot(fig)
         else:
             st.info("No responses submitted yet.")
