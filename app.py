@@ -342,13 +342,17 @@ if st.session_state.role == "host":
     
         # Plot
         if any(answer_counts.values()):
-            fig, ax = plt.subplots()
-            bars = ax.barh(list(answer_counts.keys()), list(answer_counts.values()), color="#90CAF9")
-            ax.set_xlabel("Number of Students")
-            ax.set_title("Student Answers")
+            fig, ax = plt.subplots(figsize=(4, 2.5))
+            bars = ax.barh(list(answer_counts.keys()),list(answer_counts.values()),height=0.4,color="#90CAF9")
+
             for bar in bars:
                 width = bar.get_width()
-                ax.text(width + 0.05,bar.get_y() + bar.get_height() / 0.05,str(int(width)),va="center",fontsize=8)
+                ax.text(width + 0.1, bar.get_y() + bar.get_height()/2, str(int(width)), va="center",fontsize=6)
+
+            ax.set_xlabel("Number of Students", fontsize=8)
+            ax.tick_params(labelsize=8)
+            ax.set_title("Student Answers", fontsize=10)
+            
             st.pyplot(fig)
         else:
             st.info("No responses submitted yet.")
