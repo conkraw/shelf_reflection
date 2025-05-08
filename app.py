@@ -6,6 +6,7 @@ from io import BytesIO
 import base64
 import os
 import requests
+import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 
