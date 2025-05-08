@@ -325,28 +325,33 @@ if st.session_state.role == "host":
         correct = q.get("ans", "")
         st.success(f"💡 Correct Answer: **{correct}**")
     
-        # 4) If multiple‐choice, find first correct responder
-        if q["type"] == "mc":
-            # fetch all responses for this question
-            resp_docs = db.collection("responses") \
-                          .where("question_id", "==", idx) \
-                          .stream()
-            correct_resps = []
-            for d in resp_docs:
-                r = d.to_dict()
-                if r.get("answer") == correct:
-                    ts = r.get("timestamp")
-                    # convert Firestore ts to datetime if needed
-                    dt = ts.ToDatetime() if hasattr(ts, "ToDatetime") else ts
-                    correct_resps.append((r.get("nickname"), dt))
-            if correct_resps:
-                # pick the earliest
-                correct_resps.sort(key=lambda x: x[1])
-                first_nick = correct_resps[0][0]
-                st.info(f"🏆 First correct responder: **{first_nick}**")
-            else:
-                st.info("No one has answered correctly yet.")
+    # 4b) Show bar chart of selected answers
+    if q["type"] == "mc":
+        # re-fetch all responses (if not already available)
+        resp_docs = db.collection("responses") \
+                      .where("question_id", "==", idx) \
+                      .stream()
+        answer_counts = {opt: 0 for opt in q["options"]}
+        
+        for d in resp_docs:
+            r = d.to_dict()
+            ans = r.get("answer", "")
+            if ans in answer_counts:
+                answer_counts[ans] += 1
     
+        # Plot
+        if any(answer_counts.values()):
+            fig, ax = plt.subplots()
+            bars = ax.barh(list(answer_counts.keys()), list(answer_counts.values()), color="#90CAF9")
+            ax.set_xlabel("Number of Students")
+            ax.set_title("Student Answers")
+            for bar in bars:
+                width = bar.get_width()
+                ax.text(width + 0.2, bar.get_y() + bar.get_height()/2, str(int(width)), va="center")
+            st.pyplot(fig)
+        else:
+            st.info("No responses submitted yet.")
+        
         # 5) Next Question button
         if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
             new_idx = (idx + 1) % total_q
