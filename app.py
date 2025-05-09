@@ -342,7 +342,7 @@ if st.session_state.role == "host":
     
         # Plot
         if any(answer_counts.values()):
-            fig, ax = plt.subplots(figsize=(2, 2), dpi=100)
+            fig, ax = plt.subplots(figsize=(0.5, 0.5), dpi=100)
             bars = ax.barh(list(answer_counts.keys()),list(answer_counts.values()),height=0.2,color="#90CAF9")
 
             for bar in bars:
