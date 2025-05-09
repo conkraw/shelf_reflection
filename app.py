@@ -6,8 +6,54 @@ from io import BytesIO
 import base64
 import os
 import requests
+from collections import Counter
 
 st.set_page_config(layout="wide")
+
+def plot_mc_bar(answer_counts):
+    import matplotlib.pyplot as plt
+
+    # 1) Small canvas
+    fig, ax = plt.subplots(figsize=(4, 1), dpi=80)
+
+    # 2) Thin bars
+    bars = ax.barh(
+        list(answer_counts.keys()),
+        list(answer_counts.values()),
+        height=0.4,
+        color="#90CAF9",
+        edgecolor="none"
+    )
+
+    # 3) Small ticks/fonts
+    ax.tick_params(axis="y", labelsize=8)
+    ax.tick_params(axis="x", labelsize=8)
+    ax.xaxis.set_tick_params(pad=2)
+
+    # 4) Slim spines
+    for spine in ["top", "right"]:
+        ax.spines[spine].set_visible(False)
+    ax.spines["left"].set_linewidth(0.5)
+    ax.spines["bottom"].set_linewidth(0.5)
+
+    # 5) Annotate counts
+    for bar in bars:
+        w = bar.get_width()
+        ax.text(
+            w + 0.1,
+            bar.get_y() + bar.get_height() / 2,
+            f"{int(w)}",
+            va="center",
+            fontsize=8
+        )
+
+    # 6) Light grid and layout
+    ax.grid(axis="x", linestyle="--", alpha=0.3, linewidth=0.5)
+    plt.tight_layout(pad=0.2)
+
+    # 7) Show in Streamlit
+    st.pyplot(fig)
+
 
 def display_repo_image(image_field: str):
     """
@@ -331,7 +377,12 @@ if st.session_state.role == "host":
             resp_docs = db.collection("responses") \
                           .where("question_id", "==", idx) \
                           .stream()
+
+            counts = Counter(d.to_dict().get("answer", "") for d in resp_docs)
+            plot_mc_bar(dict(counts))
+            
             correct_resps = []
+            
             for d in resp_docs:
                 r = d.to_dict()
                 if r.get("answer") == correct:
