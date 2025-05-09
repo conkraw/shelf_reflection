@@ -6,7 +6,6 @@ from io import BytesIO
 import base64
 import os
 import requests
-import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 
@@ -306,43 +305,47 @@ if st.session_state.role == "host":
     q = questions[idx]
 
     if not st.session_state.show_answer:
-        # 1) Show question text & options
+        # 1) Show question
         st.markdown(f"### Question {idx+1} / {total_q}")
         st.write(q["text"])
         if q.get("image"):
             display_repo_image(q["image"])
+
         if q["type"] == "mc":
             for opt in q["options"]:
                 st.write(f"- {opt}")
     
-        # 2) Reveal answer button
-        if st.button("Show Answer", key=f"reveal_{idx}"):
+        # 2) Button to reveal answer
+        if st.button("Show Answer"):
             st.session_state.show_answer = True
             st.rerun()
     
     else:
-        # 3) Show correct answer
+        # 3) Show the correct answer
         correct = q.get("ans", "")
         st.success(f"💡 Correct Answer: **{correct}**")
     
-        # 4) Only for MC, tally & chart responses
+        # 4) If multiple‐choice, find first correct responder
         if q["type"] == "mc":
-            # build counts
-            answer_counts = {opt: 0 for opt in q["options"]}
-            for d in responses_ref.where("question_id", "==", idx).stream():
-                ans = d.to_dict().get("answer", "")
-                if ans in answer_counts:
-                    answer_counts[ans] += 1
-    
-            # show chart if there’s any data
-            if sum(answer_counts.values()) > 0:
-                import pandas as pd
-                df = pd.DataFrame.from_dict(
-                    answer_counts, orient="index", columns=["Count"]
-                )
-                st.bar_chart(df)  # Streamlit’s native bar chart
+            # fetch all responses for this question
+            resp_docs = db.collection("responses") \
+                          .where("question_id", "==", idx) \
+                          .stream()
+            correct_resps = []
+            for d in resp_docs:
+                r = d.to_dict()
+                if r.get("answer") == correct:
+                    ts = r.get("timestamp")
+                    # convert Firestore ts to datetime if needed
+                    dt = ts.ToDatetime() if hasattr(ts, "ToDatetime") else ts
+                    correct_resps.append((r.get("nickname"), dt))
+            if correct_resps:
+                # pick the earliest
+                correct_resps.sort(key=lambda x: x[1])
+                first_nick = correct_resps[0][0]
+                st.info(f"🏆 First correct responder: **{first_nick}**")
             else:
-                st.info("No responses submitted yet.")
+                st.info("No one has answered correctly yet.")
     
         # 5) Next Question button
         if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
