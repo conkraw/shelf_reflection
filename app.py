@@ -343,7 +343,7 @@ if st.session_state.role == "host":
         # Plot
         if any(answer_counts.values()):
             # 1) Tiny figure: 1"×1"
-            fig, ax = plt.subplots(figsize=(1, 1), dpi=100)
+            fig, ax = plt.subplots(figsize=(1, 1), dpi=200)
             
             # 2) Ultra-thin bars (height=0.1)
             bars = ax.barh(
