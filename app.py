@@ -342,17 +342,40 @@ if st.session_state.role == "host":
     
         # Plot
         if any(answer_counts.values()):
-            fig, ax = plt.subplots(figsize=(1,1), dpi=200)
-            bars = ax.barh(list(answer_counts.keys()),list(answer_counts.values()),height=0.2,color="#90CAF9")
+            fig, ax = plt.subplots(figsize=(2, 2), dpi=200)
 
+            # 2) Plot very thin horizontal bars  
+            bars = ax.barh(
+                list(answer_counts.keys()),
+                list(answer_counts.values()),
+                height=0.2,             # super-thin bars
+                color="#90CAF9",
+                edgecolor="none"
+            )
+            
+            # 3) Small, half-size labels just outside each bar  
             for bar in bars:
                 width = bar.get_width()
-                ax.text(width + 0.1, bar.get_y() + bar.get_height()/2, str(int(width)), va="center",fontsize=6)
-
-            ax.set_xlabel("Number of Students", fontsize=8)
-            ax.tick_params(labelsize=8)
-            ax.set_title("Student Answers", fontsize=10)
+                ax.text(
+                    width + 0.05, 
+                    bar.get_y() + bar.get_height()/2, 
+                    str(int(width)), 
+                    va="center",
+                    fontsize=6          # tiny font
+                )
             
+            # 4) Tidy up axes and margins  
+            ax.set_xlim(0, max(answer_counts.values(), default=1) + 1)
+            ax.xaxis.set_visible(False)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["bottom"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            ax.tick_params(left=False, labelsize=6)
+            
+            plt.tight_layout(pad=0.1)
+            
+            # 5) Render in Streamlit  
             st.pyplot(fig)
         else:
             st.info("No responses submitted yet.")
