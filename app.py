@@ -306,89 +306,50 @@ if st.session_state.role == "host":
     q = questions[idx]
 
     if not st.session_state.show_answer:
-        # 1) Show question
+        # 1) Show question text & options
         st.markdown(f"### Question {idx+1} / {total_q}")
         st.write(q["text"])
         if q.get("image"):
             display_repo_image(q["image"])
-
         if q["type"] == "mc":
             for opt in q["options"]:
                 st.write(f"- {opt}")
     
-        # 2) Button to reveal answer
-        if st.button("Show Answer"):
+        # 2) Reveal answer button
+        if st.button("Show Answer", key=f"reveal_{idx}"):
             st.session_state.show_answer = True
             st.rerun()
     
     else:
-        # 3) Show the correct answer
+        # 3) Show correct answer
         correct = q.get("ans", "")
         st.success(f"💡 Correct Answer: **{correct}**")
     
-        # 4b) Show bar chart of selected answers
+        # 4) Only for MC, tally & chart responses
         if q["type"] == "mc":
-            # re-fetch all responses (if not already available)
-            resp_docs = db.collection("responses") \
-                          .where("question_id", "==", idx) \
-                          .stream()
+            # build counts
             answer_counts = {opt: 0 for opt in q["options"]}
-            
-            for d in resp_docs:
-                r = d.to_dict()
-                ans = r.get("answer", "")
+            for d in responses_ref.where("question_id", "==", idx).stream():
+                ans = d.to_dict().get("answer", "")
                 if ans in answer_counts:
                     answer_counts[ans] += 1
     
-        # Plot
-        if any(answer_counts.values()):
-            # 1) Shrink the canvas a bit (e.g. 4″ wide × 1″ tall)
-            fig, ax = plt.subplots(figsize=(4, 1), dpi=80)
-            
-            # 2) Thinner bars
-            bars = ax.barh(
-                list(answer_counts.keys()),
-                list(answer_counts.values()),
-                height=0.4,       # thinner than default
-                color="#90CAF9"
-            )
-            
-            # 3) Smaller fonts everywhere
-            ax.tick_params(axis="y", labelsize=8)   # option labels
-            ax.tick_params(axis="x", labelsize=8)   # numbers on the bottom
-            ax.xaxis.set_tick_params(pad=2)         # tighten spacing
-            
-            # 4) Slim down your spine(s)
-            for spine in ["top", "right"]:
-                ax.spines[spine].set_visible(False)
-            ax.spines["left"].set_linewidth(0.5)
-            ax.spines["bottom"].set_linewidth(0.5)
-            
-            # 5) Add your tiny annotations
-            for bar in bars:
-                w = bar.get_width()
-                ax.text(
-                    w + 0.1,                            # nudge label just outside bar
-                    bar.get_y() + bar.get_height()/2, 
-                    f"{int(w)}",
-                    va="center",
-                    fontsize=8                          # half-size labels
+            # show chart if there’s any data
+            if sum(answer_counts.values()) > 0:
+                import pandas as pd
+                df = pd.DataFrame.from_dict(
+                    answer_counts, orient="index", columns=["Count"]
                 )
-            
-            # 6) Remove grid or add a light one
-            ax.grid(axis="x", linestyle="--", alpha=0.3, linewidth=0.5)
-            
-            plt.tight_layout(pad=0.2)
-            st.pyplot(fig)
-        else:
-            st.info("No responses submitted yet.")
-        
+                st.bar_chart(df)  # Streamlit’s native bar chart
+            else:
+                st.info("No responses submitted yet.")
+    
         # 5) Next Question button
         if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
             new_idx = (idx + 1) % total_q
             st.session_state.host_idx    = new_idx
             st.session_state.show_answer = False
-            set_current_index(new_idx)
+            game_state_ref.set({"current_index": new_idx}, merge=True)
             st.rerun()
 
         if st.session_state.show_answer and idx == total_q - 1:
