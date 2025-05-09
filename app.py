@@ -14,7 +14,7 @@ def plot_mc_bar(answer_counts):
     import matplotlib.pyplot as plt
 
     # 1) Small canvas
-    fig, ax = plt.subplots(figsize=(4, 1), dpi=80)
+    fig, ax = plt.subplots(figsize=(9, 1), dpi=80)
 
     # 2) Thin bars
     bars = ax.barh(
