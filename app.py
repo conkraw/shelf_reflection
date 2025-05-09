@@ -10,7 +10,50 @@ from collections import Counter
 
 st.set_page_config(layout="wide")
 
-def plot_mc_bar(answer_counts):
+def plot_mc_bar_vert(answer_counts):
+    # 1) Slightly taller canvas to fit vertical bars
+    fig, ax = plt.subplots(figsize=(11, 4), dpi=80)
+
+    # 2) Vertical bars: keys→x, values→height
+    bars = ax.bar(
+        list(answer_counts.keys()),       # x positions
+        list(answer_counts.values()),     # bar heights
+        width=0.5,                        # thickness of each bar
+        color="#90CAF9",
+        edgecolor="none"
+    )
+
+    # 3) Ticks/fonts: x labels are the answer choices
+    ax.tick_params(axis="x", labelsize=8, rotation=0, pad=2)
+    ax.tick_params(axis="y", labelsize=8)
+
+    # 4) Slim spines
+    for spine in ["top", "right"]:
+        ax.spines[spine].set_visible(False)
+    ax.spines["left"].set_linewidth(0.5)
+    ax.spines["bottom"].set_linewidth(0.5)
+
+    # 5) Annotate counts above each bar
+    for bar in bars:
+        h = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,  # center of the bar
+            h + 0.1,                            # just above the top
+            f"{int(h)}",
+            ha="center",
+            va="bottom",
+            fontsize=8
+        )
+
+    # 6) Light horizontal gridlines
+    ax.grid(axis="y", linestyle="--", alpha=0.3, linewidth=0.5)
+
+    plt.tight_layout(pad=0.2)
+
+    # 7) Display in Streamlit
+    st.pyplot(fig)
+
+def plot_mc_bar_hor(answer_counts):
     import matplotlib.pyplot as plt
 
     # 1) Small canvas
@@ -379,7 +422,7 @@ if st.session_state.role == "host":
                           .stream()
 
             counts = Counter(d.to_dict().get("answer", "") for d in resp_docs)
-            plot_mc_bar(dict(counts))
+            plot_mc_bar_vert(dict(counts))
             
             correct_resps = []
             
