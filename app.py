@@ -342,37 +342,36 @@ if st.session_state.role == "host":
     
         # Plot
         if any(answer_counts.values()):
-            # 1) Tiny figure: 1"×1"
             fig, ax = plt.subplots(figsize=(3, 1), dpi=100)
             
-            # 2) Ultra-thin bars (height=0.1)
+            # 2) Thin but visible bars (height=0.3)
             bars = ax.barh(
-                list(answer_counts.keys()),
+                list(answer_counts.keys()), 
                 list(answer_counts.values()),
-                height=0.1,
+                height=0.3,
                 color="#90CAF9",
                 edgecolor="none"
             )
             
-            # 3) Microscopic labels (fontsize=4)
+            # 3) Small labels (fontsize=8)
             for bar in bars:
                 width = bar.get_width()
                 ax.text(
-                    width + 0.02, 
+                    width + 0.1, 
                     bar.get_y() + bar.get_height()/2, 
                     str(int(width)), 
                     va="center",
-                    fontsize=4
+                    fontsize=8
                 )
             
-            # 4) Remove all axes/spines/ticks for a badge-like look
+            # 4) Remove spines/ticks for a clean look
             for spine in ax.spines.values():
                 spine.set_visible(False)
             ax.xaxis.set_visible(False)
             ax.yaxis.set_visible(False)
             ax.set_xlim(0, max(answer_counts.values(), default=1) + 1)
             
-            plt.tight_layout(pad=0)
+            plt.tight_layout(pad=0.2)
             
             # 5) Render
             st.pyplot(fig)
