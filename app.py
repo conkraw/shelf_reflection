@@ -342,32 +342,43 @@ if st.session_state.role == "host":
     
         # Plot
         if any(answer_counts.values()):
-            fig, ax = plt.subplots(figsize=(3, 1), dpi=100)
+            # 1) Shrink the canvas a bit (e.g. 4″ wide × 1″ tall)
+            fig, ax = plt.subplots(figsize=(4, 1), dpi=80)
             
-            # 2) Thin but visible bars (height=0.3)
+            # 2) Thinner bars
             bars = ax.barh(
-                list(answer_counts.keys()), 
+                list(answer_counts.keys()),
                 list(answer_counts.values()),
-                height=0.3,
-                color="#90CAF9",
-                edgecolor="none"
+                height=0.4,       # thinner than default
+                color="#90CAF9"
             )
             
-            # 3) Small labels (fontsize=8)
+            # 3) Smaller fonts everywhere
+            ax.tick_params(axis="y", labelsize=8)   # option labels
+            ax.tick_params(axis="x", labelsize=8)   # numbers on the bottom
+            ax.xaxis.set_tick_params(pad=2)         # tighten spacing
+            
+            # 4) Slim down your spine(s)
+            for spine in ["top", "right"]:
+                ax.spines[spine].set_visible(False)
+            ax.spines["left"].set_linewidth(0.5)
+            ax.spines["bottom"].set_linewidth(0.5)
+            
+            # 5) Add your tiny annotations
             for bar in bars:
-                width = bar.get_width()
+                w = bar.get_width()
                 ax.text(
-                    width + 0.1, 
+                    w + 0.1,                            # nudge label just outside bar
                     bar.get_y() + bar.get_height()/2, 
-                    str(int(width)), 
+                    f"{int(w)}",
                     va="center",
-                    fontsize=8
+                    fontsize=8                          # half-size labels
                 )
             
-
-            plt.tight_layout(pad=0.2)
+            # 6) Remove grid or add a light one
+            ax.grid(axis="x", linestyle="--", alpha=0.3, linewidth=0.5)
             
-            # 5) Render
+            plt.tight_layout(pad=0.2)
             st.pyplot(fig)
         else:
             st.info("No responses submitted yet.")
