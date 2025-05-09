@@ -360,7 +360,6 @@ if st.session_state.role == "host":
             else:
                 st.info("No one has answered correctly yet.")
 
-            resp_docs = responses_ref.where("question_id","==",idx).stream()
             answer_counts = {opt: 0 for opt in q["options"]}
             for d in resp_docs:
                 ans = d.to_dict().get("answer","")
