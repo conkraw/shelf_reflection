@@ -9,19 +9,6 @@ import requests
 
 st.set_page_config(layout="wide")
 
-def plot_mc_responses(answer_counts: dict[str,int], title: str = "📊 How Everyone Answered"):
-    """
-    Renders a simple bar chart from a dict of {option: count}.
-    """
-    df = pd.DataFrame.from_dict(
-        answer_counts, orient="index", columns=["Count"]
-    )
-    df.index.name = "Option"
-    df = df.sort_values("Count")  # ascending so largest at bottom
-
-    st.markdown(f"### {title}")
-    st.bar_chart(df)
-    
 def display_repo_image(image_field: str):
     """
     Given an image_field like "test" or "diagram.jpg",
@@ -359,18 +346,6 @@ if st.session_state.role == "host":
                 st.info(f"🏆 First correct responder: **{first_nick}**")
             else:
                 st.info("No one has answered correctly yet.")
-
-            answer_counts = {opt: 0 for opt in q["options"]}
-            for d in resp_docs:
-                ans = d.to_dict().get("answer","")
-                if ans in answer_counts:
-                    answer_counts[ans] += 1
-    
-            # — and plot —
-            if sum(answer_counts.values()) > 0:
-                plot_mc_responses(answer_counts)
-            else:
-                st.info("No responses submitted yet.")
     
         # 5) Next Question button
         if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
