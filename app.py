@@ -396,7 +396,7 @@ if st.session_state.role == "host":
                 first_nick = correct_resps[0][0]
                 st.info(f"🏆 First correct responder: **{first_nick}**")
             else:
-                st.info("No one has answered correctly yet.")
+                st.info("")
     
         # 5) Next Question button
         if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
