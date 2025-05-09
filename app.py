@@ -364,13 +364,7 @@ if st.session_state.role == "host":
                     fontsize=8
                 )
             
-            # 4) Remove spines/ticks for a clean look
-            for spine in ax.spines.values():
-                spine.set_visible(False)
-            ax.xaxis.set_visible(False)
-            ax.yaxis.set_visible(False)
-            ax.set_xlim(0, max(answer_counts.values(), default=1) + 1)
-            
+
             plt.tight_layout(pad=0.2)
             
             # 5) Render
