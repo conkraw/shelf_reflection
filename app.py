@@ -19,7 +19,7 @@ def plot_mc_bar_vert(answer_counts):
     bars = ax.bar(
         list(answer_counts.keys()),       # x positions
         list(answer_counts.values()),     # bar heights
-        width=0.2,                        # thickness of each bar
+        width=0.05,                        # thickness of each bar
         color="#90CAF9",
         edgecolor="none"
     )
