@@ -11,6 +11,7 @@ from collections import Counter
 st.set_page_config(layout="wide")
 
 def plot_mc_bar_vert(answer_counts):
+    import matplotlib.pyplot as plt
     # 1) Slightly taller canvas to fit vertical bars
     fig, ax = plt.subplots(figsize=(11, 4), dpi=80)
 
