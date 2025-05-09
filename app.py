@@ -20,7 +20,7 @@ def plot_mc_bar(answer_counts):
     bars = ax.barh(
         list(answer_counts.keys()),
         list(answer_counts.values()),
-        height=0.4,
+        height=0.1,
         color="#90CAF9",
         edgecolor="none"
     )
