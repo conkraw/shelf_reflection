@@ -342,40 +342,39 @@ if st.session_state.role == "host":
     
         # Plot
         if any(answer_counts.values()):
-            fig, ax = plt.subplots(figsize=(2, 2), dpi=200)
-
-            # 2) Plot very thin horizontal bars  
+            # 1) Tiny figure: 1"×1"
+            fig, ax = plt.subplots(figsize=(1, 1), dpi=100)
+            
+            # 2) Ultra-thin bars (height=0.1)
             bars = ax.barh(
                 list(answer_counts.keys()),
                 list(answer_counts.values()),
-                height=0.2,             # super-thin bars
+                height=0.1,
                 color="#90CAF9",
                 edgecolor="none"
             )
             
-            # 3) Small, half-size labels just outside each bar  
+            # 3) Microscopic labels (fontsize=4)
             for bar in bars:
                 width = bar.get_width()
                 ax.text(
-                    width + 0.05, 
+                    width + 0.02, 
                     bar.get_y() + bar.get_height()/2, 
                     str(int(width)), 
                     va="center",
-                    fontsize=6          # tiny font
+                    fontsize=4
                 )
             
-            # 4) Tidy up axes and margins  
-            ax.set_xlim(0, max(answer_counts.values(), default=1) + 1)
+            # 4) Remove all axes/spines/ticks for a badge-like look
+            for spine in ax.spines.values():
+                spine.set_visible(False)
             ax.xaxis.set_visible(False)
-            ax.spines["top"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-            ax.spines["bottom"].set_visible(False)
-            ax.spines["left"].set_visible(False)
-            ax.tick_params(left=False, labelsize=6)
+            ax.yaxis.set_visible(False)
+            ax.set_xlim(0, max(answer_counts.values(), default=1) + 1)
             
-            plt.tight_layout(pad=0.1)
+            plt.tight_layout(pad=0)
             
-            # 5) Render in Streamlit  
+            # 5) Render
             st.pyplot(fig)
         else:
             st.info("No responses submitted yet.")
