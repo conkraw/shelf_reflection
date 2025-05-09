@@ -326,19 +326,19 @@ if st.session_state.role == "host":
         correct = q.get("ans", "")
         st.success(f"💡 Correct Answer: **{correct}**")
     
-    # 4b) Show bar chart of selected answers
-    if q["type"] == "mc":
-        # re-fetch all responses (if not already available)
-        resp_docs = db.collection("responses") \
-                      .where("question_id", "==", idx) \
-                      .stream()
-        answer_counts = {opt: 0 for opt in q["options"]}
-        
-        for d in resp_docs:
-            r = d.to_dict()
-            ans = r.get("answer", "")
-            if ans in answer_counts:
-                answer_counts[ans] += 1
+        # 4b) Show bar chart of selected answers
+        if q["type"] == "mc":
+            # re-fetch all responses (if not already available)
+            resp_docs = db.collection("responses") \
+                          .where("question_id", "==", idx) \
+                          .stream()
+            answer_counts = {opt: 0 for opt in q["options"]}
+            
+            for d in resp_docs:
+                r = d.to_dict()
+                ans = r.get("answer", "")
+                if ans in answer_counts:
+                    answer_counts[ans] += 1
     
         # Plot
         if any(answer_counts.values()):
