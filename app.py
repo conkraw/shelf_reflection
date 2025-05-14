@@ -529,11 +529,12 @@ if st.session_state.role == "player":
     nick = st.session_state.nick
     st.markdown(f"**👋 Hello, {nick}!**")
 
-    st_autorefresh(interval=2000, key="waiting_for_host")
+    #st_autorefresh(interval=2000, key="waiting_for_host")
     
     # ─── WAIT FOR HOST ────────────────────────────────
     status = db.document("game_state/current").get().to_dict() or {}
     if not status.get("started", False):
+        st_autorefresh(interval=2000, key="waiting_for_host")
         st.warning("⏳ Waiting for the host to start the quiz…")
         
         st.markdown("""
