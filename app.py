@@ -411,6 +411,15 @@ if st.session_state.role == "host":
             st.rerun()
     
     else:
+        # ─── 0) Redisplay the question & options ──────────────────────────────
+        st.markdown(f"### Question {idx+1} / {total_q}")
+        st.write(q["text"])
+        if q.get("image"):
+            display_repo_image(q["image"])
+        if q["type"] == "mc":
+            for opt in q["options"]:
+                st.markdown(f"- {opt}")
+        
         # 3) Show the correct answer
         correct = q.get("ans", "")
         st.success(f"💡 Correct Answer: **{correct}**")
