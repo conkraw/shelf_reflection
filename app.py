@@ -10,6 +10,17 @@ from collections import Counter
 
 st.set_page_config(layout="wide")
 
+def reveal_answer():
+    st.session_state.show_answer = True
+
+def go_next():
+    st.session_state.host_idx    = (st.session_state.host_idx + 1) % total_q
+    st.session_state.show_answer = False
+    set_current_index(st.session_state.host_idx)
+
+def show_final():
+    st.session_state.show_results = True
+    
 def plot_mc_bar_vert(answer_counts):
     import matplotlib.pyplot as plt
     # 1) Slightly taller canvas to fit vertical bars
@@ -399,7 +410,6 @@ if st.session_state.role == "host":
     q = questions[idx]
 
     if not st.session_state.show_answer:
-        # 1) Show question
         st.markdown(f"### Question {idx+1} / {total_q}")
         st.write(q["text"])
         if q.get("image"):
@@ -410,10 +420,8 @@ if st.session_state.role == "host":
                 st.write(f"- {opt}")
     
         # 2) Button to reveal answer
-        if st.button("Show Answer"):
-            st.session_state.show_answer = True
-            st.rerun()
-    
+            st.button("Show Answer",key=f"reveal_{idx}",on_click=reveal_answer)
+
     else:
         # ─── 0) Redisplay the question & options ──────────────────────────────
         st.markdown(f"### Question {idx+1} / {total_q}")
@@ -456,17 +464,10 @@ if st.session_state.role == "host":
                 st.info("")
     
         # 5) Next Question button
-        if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
-            new_idx = (idx + 1) % total_q
-            st.session_state.host_idx    = new_idx
-            st.session_state.show_answer = False
-            set_current_index(new_idx)
-            st.experimental_request_rerun()
-
-        if st.session_state.show_answer and idx == total_q - 1:
-          if st.button("🏁 Show Results", key="show_results_btn"):
-              st.session_state.show_results = True
-              st.experimental_request_rerun()
+        if idx < total_q - 1:
+            st.button("➡️ Next Question",key=f"next_btn_{idx}",on_click=go_next)
+        else:
+            st.button("🏁 Show Results",key="show_results_btn",on_click=show_final)
       
     # ─── Student Responses ────────────────────────────────────────
     st.markdown("---")
