@@ -176,7 +176,10 @@ if not cur_ref.get().exists:
 def load_questions():
     try:
         quiz_id = st.session_state.quiz_id
-        docs = db.collection(quiz_id).order_by("__name__").stream()
+        #docs = db.collection(quiz_id).order_by("__name__").stream()
+        docs = list(db.collection(quiz_id).stream())
+        docs.sort(key=lambda d: int(d.id))
+        
         questions = []
         for doc in docs:
             data = doc.to_dict()
