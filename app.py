@@ -415,6 +415,9 @@ if st.session_state.role == "host":
 
     # ─── Load questions & index ───────────────────────────────────
     questions = load_questions()
+    st.write(f"🔍 DEBUG — load_questions() returned {len(questions)} items")
+    st.write("🔢 DEBUG — raw doc IDs:", [doc.id for doc in db.collection(st.session_state.quiz_id).stream()])
+
     total_q = len(questions)
     idx = get_current_index()
     q = questions[idx]
