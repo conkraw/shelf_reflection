@@ -461,12 +461,12 @@ if st.session_state.role == "host":
             st.session_state.host_idx    = new_idx
             st.session_state.show_answer = False
             set_current_index(new_idx)
-            st.experimental_rerun()
+            st.rerun()
 
         if st.session_state.show_answer and idx == total_q - 1:
           if st.button("🏁 Show Results", key="show_results_btn"):
               st.session_state.show_results = True
-              st.experimental_rerun()
+              st.rerun()
       
     # ─── Student Responses ────────────────────────────────────────
     st.markdown("---")
