@@ -368,6 +368,12 @@ if st.session_state.role == "host":
         participants = {}
         all_resps   = db.collection("responses").stream()
         questions   = load_questions()
+
+        st.write(f"🔍 DEBUG — load_questions() returned {len(questions)} items")
+        st.write("🔢 DEBUG — raw doc IDs:", [doc.id for doc in db.collection(st.session_state.quiz_id).stream()])
+
+
+
         for d in all_resps:
             r    = d.to_dict()
             qid  = r["question_id"]
