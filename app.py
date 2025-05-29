@@ -7,89 +7,9 @@ import base64
 import os
 import requests
 from collections import Counter
-import json, firebase_admin
-from firebase_admin import credentials, firestore
-from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(layout="wide")
 
-firebase_creds = st.secrets["firebase_service_account"].to_dict()
-if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_creds)
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-cur_ref = db.document("game_state/current")
-if not cur_ref.get().exists:
-    # Initialize to question 0 so players immediately see Q1
-    cur_ref.set({"current_index": 0})
-    
-def get_current_index():
-    doc_ref = db.document("game_state/current")
-    doc = doc_ref.get()
-    if not doc.exists:
-        # no game_state yet → start at 0
-        return 0
-    data = doc.to_dict() or {}
-    return data.get("current_index", 0)
-
-def set_current_index(idx):
-    db.document("game_state/current").set(
-        {"current_index": idx},
-        merge=True           # <-- preserves any other keys, like "started"
-    )
-    
-def load_questions():
-    try:
-        quiz_id = st.session_state.quiz_id
-
-        # 1) grab them all (no order_by)
-        docs = list(db.collection(quiz_id).stream())
-
-        # 2) sort by numeric ID instead of lexicographically
-        try:
-            docs.sort(key=lambda d: int(d.id))
-        except ValueError:
-            st.error("❌ Question IDs must be integer strings (0,1,2,…) to sort properly.")
-            st.stop()
-
-        # 3) build your questions list
-        questions = []
-        for doc in docs:
-            data = doc.to_dict()
-            if data is None:
-                st.warning(f"Document {doc.id} has no data.")
-                continue
-            questions.append(data)
-
-        if not questions:
-            st.warning("⚠️ No questions found in Firestore – check your collection name and rules.")
-
-        return questions
-
-    except Exception as e:
-        st.error(f"❌ Failed to load questions from Firestore:\n{e}")
-        st.stop()
-
-
-def reveal_answer():
-    st.session_state.show_answer = True
-
-def go_next():
-    qs = load_questions()               # re-load so we know exactly how many
-    n  = len(qs)
-    curr = get_current_index()
-    next_index = (curr + 1) % n
-    set_current_index(next_index)
-    st.session_state.show_answer = False
-
-def show_final():
-    st.session_state.show_results = True
-
-for key, default in (("show_answer", False), ("show_results", False)):
-    if key not in st.session_state:
-        st.session_state[key] = default
-    
 def plot_mc_bar_vert(answer_counts):
     import matplotlib.pyplot as plt
     # 1) Slightly taller canvas to fit vertical bars
@@ -177,7 +97,8 @@ def plot_mc_bar_hor(answer_counts):
 
     # 7) Show in Streamlit
     st.pyplot(fig)
-    
+
+
 def display_repo_image(image_field: str):
     """
     Given an image_field like "test" or "diagram.jpg",
@@ -235,6 +156,59 @@ if "role" not in st.session_state:
         else:
             st.error("❌ Invalid code.")
     st.stop()
+# 2) Now that we have a role, we can import and initialize Firestore
+import json, firebase_admin
+from firebase_admin import credentials, firestore
+from streamlit_autorefresh import st_autorefresh
+
+firebase_creds = st.secrets["firebase_service_account"].to_dict()
+if not firebase_admin._apps:
+    cred = credentials.Certificate(firebase_creds)
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+cur_ref = db.document("game_state/current")
+if not cur_ref.get().exists:
+    # Initialize to question 0 so players immediately see Q1
+    cur_ref.set({"current_index": 0})
+
+# ─── 2) Helpers ───────────────────────────────────────────────────────────────
+def load_questions():
+    try:
+        quiz_id = st.session_state.quiz_id
+        docs = db.collection(quiz_id).order_by("__name__").stream()
+        questions = []
+        for doc in docs:
+            data = doc.to_dict()
+            if data is None:
+                st.warning(f"Document {doc.id} has no data.")
+                continue
+            questions.append(data)
+        if not questions:
+            st.warning("⚠️ No questions found in Firestore – check your collection name and rules.")
+        return questions
+
+    except Exception as e:
+        # Show the error in the app so you can see exactly what's wrong
+        st.error(f"❌ Failed to load questions from Firestore:\n{e}")
+        # Stop the app here so you don’t run into downstream indexing errors
+        st.stop()
+
+# ─── 3. Data Model Helpers ────────────────────────────────────────────────────
+def get_current_index():
+    doc_ref = db.document("game_state/current")
+    doc = doc_ref.get()
+    if not doc.exists:
+        # no game_state yet → start at 0
+        return 0
+    data = doc.to_dict() or {}
+    return data.get("current_index", 0)
+
+def set_current_index(idx):
+    db.document("game_state/current").set(
+        {"current_index": idx},
+        merge=True           # <-- preserves any other keys, like "started"
+    )
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
@@ -368,12 +342,6 @@ if st.session_state.role == "host":
         participants = {}
         all_resps   = db.collection("responses").stream()
         questions   = load_questions()
-
-        st.write(f"🔍 DEBUG — load_questions() returned {len(questions)} items")
-        st.write("🔢 DEBUG — raw doc IDs:", [doc.id for doc in db.collection(st.session_state.quiz_id).stream()])
-
-
-
         for d in all_resps:
             r    = d.to_dict()
             qid  = r["question_id"]
@@ -415,14 +383,19 @@ if st.session_state.role == "host":
 
     # ─── Load questions & index ───────────────────────────────────
     questions = load_questions()
-    st.write(f"🔍 DEBUG — load_questions() returned {len(questions)} items")
-    st.write("🔢 DEBUG — raw doc IDs:", [doc.id for doc in db.collection(st.session_state.quiz_id).stream()])
-
     total_q = len(questions)
-    idx = get_current_index()
+    if "host_idx" not in st.session_state:
+        st.session_state.host_idx = get_current_index()
+    idx = st.session_state.host_idx
+
+    # ensure we have a show_answer flag
+    if "show_answer" not in st.session_state:
+        st.session_state.show_answer = False
+    
     q = questions[idx]
 
     if not st.session_state.show_answer:
+        # 1) Show question
         st.markdown(f"### Question {idx+1} / {total_q}")
         st.write(q["text"])
         if q.get("image"):
@@ -433,8 +406,10 @@ if st.session_state.role == "host":
                 st.write(f"- {opt}")
     
         # 2) Button to reveal answer
-            st.button("Show Answer",key=f"reveal_{idx}",on_click=reveal_answer)
-
+        if st.button("Show Answer"):
+            st.session_state.show_answer = True
+            st.rerun()
+    
     else:
         # ─── 0) Redisplay the question & options ──────────────────────────────
         st.markdown(f"### Question {idx+1} / {total_q}")
@@ -477,10 +452,17 @@ if st.session_state.role == "host":
                 st.info("")
     
         # 5) Next Question button
-        if idx < total_q - 1:
-            st.button("➡️ Next Question",key=f"next_btn_{idx}",on_click=go_next)
-        else:
-            st.button("🏁 Show Results",key="show_results_btn",on_click=show_final)
+        if st.button("➡️ Next Question", key=f"next_btn_{idx}"):
+            new_idx = (idx + 1) % total_q
+            st.session_state.host_idx    = new_idx
+            st.session_state.show_answer = False
+            set_current_index(new_idx)
+            st.rerun()
+
+        if st.session_state.show_answer and idx == total_q - 1:
+          if st.button("🏁 Show Results", key="show_results_btn"):
+              st.session_state.show_results = True
+              st.rerun()
       
     # ─── Student Responses ────────────────────────────────────────
     st.markdown("---")
@@ -581,14 +563,12 @@ if st.session_state.role == "player":
     current_idx = st.session_state.active_idx
 
     # 2) Load the question
-    #quiz_id = st.session_state.quiz_id
-    #q_doc = db.collection(quiz_id).document(str(current_idx)).get()
-    #if not q_doc.exists:
-    #    st.error(f"No question found for index {current_idx}")
-    #    st.stop()
-    #q = q_doc.to_dict()
-    questions = load_questions()
-    q = questions[current_idx]
+    quiz_id = st.session_state.quiz_id
+    q_doc = db.collection(quiz_id).document(str(current_idx)).get()
+    if not q_doc.exists:
+        st.error(f"No question found for index {current_idx}")
+        st.stop()
+    q = q_doc.to_dict()
 
     # 3) Single submitted flag
     submitted_key = f"submitted_{current_idx}"
