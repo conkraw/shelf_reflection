@@ -414,6 +414,11 @@ if st.session_state.role == "host":
     idx = get_current_index()
     q = questions[idx]
 
+    if "show_answer" not in st.session_state:
+        st.session_state.show_answer = False
+    if "show_results" not in st.session_state:
+        st.session_state.show_results = False
+
     if not st.session_state.show_answer:
         st.markdown(f"### Question {idx+1} / {total_q}")
         st.write(q["text"])
