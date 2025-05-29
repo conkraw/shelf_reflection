@@ -12,7 +12,6 @@ st.set_page_config(layout="wide")
 
 # ─── Initialize session‐state defaults ───────────────────────────────────
 if "host_idx" not in st.session_state:
-    # If you’re syncing with Firestore, pull the live value:
     st.session_state.host_idx = get_current_index()
 if "show_answer" not in st.session_state:
     st.session_state.show_answer = False
@@ -31,6 +30,21 @@ def reveal_answer():
 
 def show_final():
     st.session_state.show_results = True
+
+def get_current_index():
+    doc_ref = db.document("game_state/current")
+    doc = doc_ref.get()
+    if not doc.exists:
+        # no game_state yet → start at 0
+        return 0
+    data = doc.to_dict() or {}
+    return data.get("current_index", 0)
+
+def set_current_index(idx):
+    db.document("game_state/current").set(
+        {"current_index": idx},
+        merge=True           # <-- preserves any other keys, like "started"
+    )
     
 def plot_mc_bar_vert(answer_counts):
     import matplotlib.pyplot as plt
@@ -119,11 +133,6 @@ def plot_mc_bar_hor(answer_counts):
 
     # 7) Show in Streamlit
     st.pyplot(fig)
-
-def go_next():
-    st.session_state.host_idx    = (st.session_state.host_idx + 1) % total_q
-    st.session_state.show_answer = False
-    set_current_index(st.session_state.host_idx)
     
 def display_repo_image(image_field: str):
     """
@@ -230,23 +239,6 @@ def load_questions():
     except Exception as e:
         st.error(f"❌ Failed to load questions from Firestore:\n{e}")
         st.stop()
-
-
-# ─── 3. Data Model Helpers ────────────────────────────────────────────────────
-def get_current_index():
-    doc_ref = db.document("game_state/current")
-    doc = doc_ref.get()
-    if not doc.exists:
-        # no game_state yet → start at 0
-        return 0
-    data = doc.to_dict() or {}
-    return data.get("current_index", 0)
-
-def set_current_index(idx):
-    db.document("game_state/current").set(
-        {"current_index": idx},
-        merge=True           # <-- preserves any other keys, like "started"
-    )
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
