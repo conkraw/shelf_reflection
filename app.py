@@ -14,9 +14,9 @@ def reveal_answer():
     st.session_state.show_answer = True
 
 def go_next():
-    st.session_state.host_idx    = (st.session_state.host_idx + 1) % total_q
+    next_idx = (get_current_index() + 1) % total_q
+    set_current_index(next_idx)
     st.session_state.show_answer = False
-    set_current_index(st.session_state.host_idx)
 
 def show_final():
     st.session_state.show_results = True
@@ -191,7 +191,18 @@ if not cur_ref.get().exists:
 def load_questions():
     try:
         quiz_id = st.session_state.quiz_id
-        docs = db.collection(quiz_id).order_by("__name__").stream()
+
+        # 1) grab them all (no order_by)
+        docs = list(db.collection(quiz_id).stream())
+
+        # 2) sort by numeric ID instead of lexicographically
+        try:
+            docs.sort(key=lambda d: int(d.id))
+        except ValueError:
+            st.error("❌ Question IDs must be integer strings (0,1,2,…) to sort properly.")
+            st.stop()
+
+        # 3) build your questions list
         questions = []
         for doc in docs:
             data = doc.to_dict()
@@ -199,15 +210,16 @@ def load_questions():
                 st.warning(f"Document {doc.id} has no data.")
                 continue
             questions.append(data)
+
         if not questions:
             st.warning("⚠️ No questions found in Firestore – check your collection name and rules.")
+
         return questions
 
     except Exception as e:
-        # Show the error in the app so you can see exactly what's wrong
         st.error(f"❌ Failed to load questions from Firestore:\n{e}")
-        # Stop the app here so you don’t run into downstream indexing errors
         st.stop()
+
 
 # ─── 3. Data Model Helpers ────────────────────────────────────────────────────
 def get_current_index():
@@ -399,14 +411,7 @@ if st.session_state.role == "host":
     # ─── Load questions & index ───────────────────────────────────
     questions = load_questions()
     total_q = len(questions)
-    if "host_idx" not in st.session_state:
-        st.session_state.host_idx = get_current_index()
-    idx = st.session_state.host_idx
-
-    # ensure we have a show_answer flag
-    if "show_answer" not in st.session_state:
-        st.session_state.show_answer = False
-    
+    idx = get_current_index()
     q = questions[idx]
 
     if not st.session_state.show_answer:
