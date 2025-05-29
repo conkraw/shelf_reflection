@@ -11,25 +11,6 @@ from collections import Counter
 st.set_page_config(layout="wide")
 
 # ─── Initialize session‐state defaults ───────────────────────────────────
-if "host_idx" not in st.session_state:
-    st.session_state.host_idx = get_current_index()
-if "show_answer" not in st.session_state:
-    st.session_state.show_answer = False
-if "show_results" not in st.session_state:
-    st.session_state.show_results = False
-
-def go_next():
-    curr = st.session_state.get("host_idx", get_current_index())
-    new_idx = (curr + 1) % total_q
-    st.session_state.host_idx = new_idx
-    set_current_index(new_idx)
-    st.session_state.show_answer = False
-
-def reveal_answer():
-    st.session_state.show_answer = True
-
-def show_final():
-    st.session_state.show_results = True
 
 def get_current_index():
     doc_ref = db.document("game_state/current")
@@ -45,6 +26,26 @@ def set_current_index(idx):
         {"current_index": idx},
         merge=True           # <-- preserves any other keys, like "started"
     )
+
+def go_next():
+    curr = st.session_state.get("host_idx", get_current_index())
+    new_idx = (curr + 1) % total_q
+    st.session_state.host_idx = new_idx
+    set_current_index(new_idx)
+    st.session_state.show_answer = False
+
+def reveal_answer():
+    st.session_state.show_answer = True
+
+def show_final():
+    st.session_state.show_results = True
+
+if "host_idx" not in st.session_state:
+    st.session_state.host_idx = get_current_index()
+if "show_answer" not in st.session_state:
+    st.session_state.show_answer = False
+if "show_results" not in st.session_state:
+    st.session_state.show_results = False
     
 def plot_mc_bar_vert(answer_counts):
     import matplotlib.pyplot as plt
