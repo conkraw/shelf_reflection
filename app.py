@@ -10,13 +10,24 @@ from collections import Counter
 
 st.set_page_config(layout="wide")
 
-def reveal_answer():
-    st.session_state.show_answer = True
+# ─── Initialize session‐state defaults ───────────────────────────────────
+if "host_idx" not in st.session_state:
+    # If you’re syncing with Firestore, pull the live value:
+    st.session_state.host_idx = get_current_index()
+if "show_answer" not in st.session_state:
+    st.session_state.show_answer = False
+if "show_results" not in st.session_state:
+    st.session_state.show_results = False
 
 def go_next():
-    next_idx = (get_current_index() + 1) % total_q
-    set_current_index(next_idx)
+    curr = st.session_state.get("host_idx", get_current_index())
+    new_idx = (curr + 1) % total_q
+    st.session_state.host_idx = new_idx
+    set_current_index(new_idx)
     st.session_state.show_answer = False
+
+def reveal_answer():
+    st.session_state.show_answer = True
 
 def show_final():
     st.session_state.show_results = True
@@ -413,11 +424,6 @@ if st.session_state.role == "host":
     total_q = len(questions)
     idx = get_current_index()
     q = questions[idx]
-
-    if "show_answer" not in st.session_state:
-        st.session_state.show_answer = False
-    if "show_results" not in st.session_state:
-        st.session_state.show_results = False
 
     if not st.session_state.show_answer:
         st.markdown(f"### Question {idx+1} / {total_q}")
