@@ -568,12 +568,14 @@ if st.session_state.role == "player":
     current_idx = st.session_state.active_idx
 
     # 2) Load the question
-    quiz_id = st.session_state.quiz_id
-    q_doc = db.collection(quiz_id).document(str(current_idx)).get()
-    if not q_doc.exists:
-        st.error(f"No question found for index {current_idx}")
-        st.stop()
-    q = q_doc.to_dict()
+    #quiz_id = st.session_state.quiz_id
+    #q_doc = db.collection(quiz_id).document(str(current_idx)).get()
+    #if not q_doc.exists:
+    #    st.error(f"No question found for index {current_idx}")
+    #    st.stop()
+    #q = q_doc.to_dict()
+    questions = load_questions()
+    q = questions[current_idx]
 
     # 3) Single submitted flag
     submitted_key = f"submitted_{current_idx}"
