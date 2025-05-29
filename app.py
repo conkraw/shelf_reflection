@@ -98,7 +98,11 @@ def plot_mc_bar_hor(answer_counts):
     # 7) Show in Streamlit
     st.pyplot(fig)
 
-
+def go_next():
+    st.session_state.host_idx    = (st.session_state.host_idx + 1) % total_q
+    st.session_state.show_answer = False
+    set_current_index(st.session_state.host_idx)
+    
 def display_repo_image(image_field: str):
     """
     Given an image_field like "test" or "diagram.jpg",
@@ -457,12 +461,12 @@ if st.session_state.role == "host":
             st.session_state.host_idx    = new_idx
             st.session_state.show_answer = False
             set_current_index(new_idx)
-            st.rerun()
+            st.experimental_rerun()
 
         if st.session_state.show_answer and idx == total_q - 1:
           if st.button("🏁 Show Results", key="show_results_btn"):
               st.session_state.show_results = True
-              st.rerun()
+              st.experimental_rerun()
       
     # ─── Student Responses ────────────────────────────────────────
     st.markdown("---")
