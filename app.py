@@ -76,10 +76,11 @@ def reveal_answer():
     st.session_state.show_answer = True
 
 def go_next():
-    curr = st.session_state.get("host_idx", get_current_index())
-    new_idx = (curr + 1) % total_q
-    st.session_state.host_idx = new_idx
-    set_current_index(new_idx)
+    qs = load_questions()               # re-load so we know exactly how many
+    n  = len(qs)
+    curr = get_current_index()
+    next_index = (curr + 1) % n
+    set_current_index(next_index)
     st.session_state.show_answer = False
 
 def show_final():
