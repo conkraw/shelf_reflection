@@ -7,11 +7,23 @@ import base64
 import os
 import requests
 from collections import Counter
+import json, firebase_admin
+from firebase_admin import credentials, firestore
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(layout="wide")
 
-# ─── Initialize session‐state defaults ───────────────────────────────────
+firebase_creds = st.secrets["firebase_service_account"].to_dict()
+if not firebase_admin._apps:
+    cred = credentials.Certificate(firebase_creds)
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
 
+cur_ref = db.document("game_state/current")
+if not cur_ref.get().exists:
+    # Initialize to question 0 so players immediately see Q1
+    cur_ref.set({"current_index": 0})
+    
 def get_current_index():
     doc_ref = db.document("game_state/current")
     doc = doc_ref.get()
@@ -26,6 +38,42 @@ def set_current_index(idx):
         {"current_index": idx},
         merge=True           # <-- preserves any other keys, like "started"
     )
+    
+def load_questions():
+    try:
+        quiz_id = st.session_state.quiz_id
+
+        # 1) grab them all (no order_by)
+        docs = list(db.collection(quiz_id).stream())
+
+        # 2) sort by numeric ID instead of lexicographically
+        try:
+            docs.sort(key=lambda d: int(d.id))
+        except ValueError:
+            st.error("❌ Question IDs must be integer strings (0,1,2,…) to sort properly.")
+            st.stop()
+
+        # 3) build your questions list
+        questions = []
+        for doc in docs:
+            data = doc.to_dict()
+            if data is None:
+                st.warning(f"Document {doc.id} has no data.")
+                continue
+            questions.append(data)
+
+        if not questions:
+            st.warning("⚠️ No questions found in Firestore – check your collection name and rules.")
+
+        return questions
+
+    except Exception as e:
+        st.error(f"❌ Failed to load questions from Firestore:\n{e}")
+        st.stop()
+
+
+def reveal_answer():
+    st.session_state.show_answer = True
 
 def go_next():
     curr = st.session_state.get("host_idx", get_current_index())
@@ -34,18 +82,12 @@ def go_next():
     set_current_index(new_idx)
     st.session_state.show_answer = False
 
-def reveal_answer():
-    st.session_state.show_answer = True
-
 def show_final():
     st.session_state.show_results = True
 
-if "host_idx" not in st.session_state:
-    st.session_state.host_idx = get_current_index()
-if "show_answer" not in st.session_state:
-    st.session_state.show_answer = False
-if "show_results" not in st.session_state:
-    st.session_state.show_results = False
+for key, default in (("show_answer", False), ("show_results", False)):
+    if key not in st.session_state:
+        st.session_state[key] = default
     
 def plot_mc_bar_vert(answer_counts):
     import matplotlib.pyplot as plt
@@ -192,54 +234,6 @@ if "role" not in st.session_state:
         else:
             st.error("❌ Invalid code.")
     st.stop()
-# 2) Now that we have a role, we can import and initialize Firestore
-import json, firebase_admin
-from firebase_admin import credentials, firestore
-from streamlit_autorefresh import st_autorefresh
-
-firebase_creds = st.secrets["firebase_service_account"].to_dict()
-if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_creds)
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-cur_ref = db.document("game_state/current")
-if not cur_ref.get().exists:
-    # Initialize to question 0 so players immediately see Q1
-    cur_ref.set({"current_index": 0})
-
-# ─── 2) Helpers ───────────────────────────────────────────────────────────────
-def load_questions():
-    try:
-        quiz_id = st.session_state.quiz_id
-
-        # 1) grab them all (no order_by)
-        docs = list(db.collection(quiz_id).stream())
-
-        # 2) sort by numeric ID instead of lexicographically
-        try:
-            docs.sort(key=lambda d: int(d.id))
-        except ValueError:
-            st.error("❌ Question IDs must be integer strings (0,1,2,…) to sort properly.")
-            st.stop()
-
-        # 3) build your questions list
-        questions = []
-        for doc in docs:
-            data = doc.to_dict()
-            if data is None:
-                st.warning(f"Document {doc.id} has no data.")
-                continue
-            questions.append(data)
-
-        if not questions:
-            st.warning("⚠️ No questions found in Firestore – check your collection name and rules.")
-
-        return questions
-
-    except Exception as e:
-        st.error(f"❌ Failed to load questions from Firestore:\n{e}")
-        st.stop()
 
 # ─── 2. App Configuration ─────────────────────────────────────────────────────
 if st.session_state.role == "host":
